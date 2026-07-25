@@ -1,0 +1,43 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Report > renders ANSI colors 1`] = `
+"[31m[E01] Error:[39m Invalid expression
+   [38;5;246m╭[39m[38;5;246m─[39m[38;5;246m[[39mexample.ts:1:1[38;5;246m][39m
+   [38;5;246m│[39m
+ [38;5;246m1 │[39m [38;5;249mc[39m[38;5;249mo[39m[38;5;249mn[39m[38;5;249ms[39m[38;5;249mt[39m[38;5;249m [39m[38;5;249ma[39m[38;5;249mn[39m[38;5;249ms[39m[38;5;249mw[39m[38;5;249me[39m[38;5;249mr[39m[38;5;249m [39m[38;5;249m=[39m[38;5;249m [39m[34mf[39m[34ma[39m[34ml[39m[34ms[39m[34me[39m
+ [38;5;246m  ·[39m                [34m─[39m[34m─[39m[34m┬[39m[34m─[39m[34m─[39m  
+ [38;5;246m  ·[39m                  [34m╰[39m[34m─[39m[34m─[39m[34m─[39m[34m─[39m Expected a number
+[38;5;246m───╯[39m
+"
+`;
+
+exports[`Report > renders a multiline label and note 1`] = `
+"[E01] Error: Invalid expression
+   ╭─[example.ts:1:1]
+   │
+ 1 │ ╭─▶ const value = {
+ 2 │ │     left: 1,
+   · │           ┬  
+   · │           ╰── This is a number
+ 3 │ │     right: "1",
+   · │            ─┬─  
+   · │             ╰─── This is a string
+ 4 │ ├─▶ }
+   · │       
+   · ╰─────── Fields use incompatible types
+   ·     
+   ·     Note: Object fields must agree
+───╯
+"
+`;
+
+exports[`Report > renders an inline label 1`] = `
+"[E01] Error: Invalid expression
+   ╭─[example.ts:1:1]
+   │
+ 1 │ const answer = false
+   ·                ──┬──  
+   ·                  ╰──── Expected a number
+───╯
+"
+`;

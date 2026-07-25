@@ -11,13 +11,6 @@ export const colors = {
   yellow: ansi('33', '39'),
 }
 
-export const bgColors = {
-  blue: ansi('44', '49'),
-  green: ansi('42', '49'),
-  red: ansi('41', '49'),
-  yellow: ansi('43', '49'),
-}
-
 export abstract class Color {
   static Fixed = Fixed
   static Named = colors

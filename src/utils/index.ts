@@ -2,8 +2,8 @@ import { Option } from '../data/Option.js'
 
 export { binary_search_by_key } from './binary_search_by_key.js'
 
-export function range(start: number, end: number) {
-  let rv = []
+export function range(start: number, end: number): number[] {
+  const rv: number[] = []
   while (start < end) {
     rv.push(start)
     start++
@@ -33,17 +33,40 @@ export const max = (self: number[]) => {
   return Math.max.apply(null, self)
 }
 
-export const min = (self: number[]) => {
-  if (self.length === 0) return undefined
-  return Math.min.apply(null, self)
-}
-
 // convert a boolean to an integer value
 export const bton = (b: boolean): number => (b === true ? 1 : 0)
 
+export function filterMap<T, R>(
+  items: readonly T[],
+  fn: (value: T, index: number) => R | null,
+): R[] {
+  const result: R[] = []
+  items.forEach((value, index) => {
+    const mapped = fn(value, index)
+    if (mapped !== null) result.push(mapped)
+  })
+  return result
+}
+
+export function saturatingSub(value: number, amount: number): number {
+  return Math.max(0, value - amount)
+}
+
+export function maxNumber(value: number, other: number): number {
+  return Math.max(value, other)
+}
+
+export function minNumber(value: number, other: number): number {
+  return Math.min(value, other)
+}
+
 export function sort_by_key<T>(arr: T[], fn: (a: T) => number | string): void {
   arr.sort((a, b) => {
-    return (fn(a) as any) - (fn(b) as any)
+    const left = fn(a)
+    const right = fn(b)
+    return typeof left === 'number' && typeof right === 'number'
+      ? left - right
+      : String(left).localeCompare(String(right))
   })
 }
 
@@ -57,19 +80,11 @@ export function min_by_key<T>(arr: T[], fn: (value: T) => number): Option<T> {
   return Option.from(res[1])
 }
 
-export const isString = (o: any): o is string => typeof o === 'string'
-export const isNumber = (o: any): o is number => typeof o === 'number'
-export const isBoolean = (o: any): o is boolean => typeof o === 'boolean'
+export const isString = (o: unknown): o is string => typeof o === 'string'
+export const isNumber = (o: unknown): o is number => typeof o === 'number'
+export const isBoolean = (o: unknown): o is boolean => typeof o === 'boolean'
 
 export const isCallback = (
-  maybeFunction: true | ((...args: any[]) => void),
-): maybeFunction is (...args: any[]) => void =>
+  maybeFunction: unknown,
+): maybeFunction is (...args: never[]) => unknown =>
   typeof maybeFunction === 'function'
-
-export function toCamelCase(str: string) {
-  return str
-    .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
-      return index === 0 ? word.toLowerCase() : word.toUpperCase()
-    })
-    .replace(/\s+/g, '')
-}

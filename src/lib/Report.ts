@@ -1,49 +1,38 @@
-import assert from 'node:assert'
 import { Display } from '../data/Display.js'
 import { none, Option, some } from '../data/Option.js'
 import { Range } from '../data/Range.js'
 import { Show } from '../data/Show.js'
 import { Span } from '../data/Span.js'
-import { stderrWriter, stdoutWriter, Write } from '../data/Write.js'
+import { mkStringWriter, Write } from '../data/Write.js'
 import { CharSet, Config, LabelAttach } from '../lib/Config.js'
 import {
   bton,
+  filterMap,
   isBoolean,
   isNumber,
   max,
+  maxNumber,
   min_by_key,
+  minNumber,
   range,
   rangeIter,
+  saturatingSub,
   sort_by_key,
 } from '../utils/index.js'
-import { eprintln, format, write, writeln } from '../write.js'
+import { format, write, writeln } from '../write.js'
 import { Characters, iCharacters } from './Characters.js'
+import { ColorFn } from './Color.js'
 import { Label } from './Label.js'
 import { LabelInfo, LabelKind } from './LabelInfo.js'
 import { ReportBuilder } from './ReportBuilder.js'
-import { ReportKind } from './ReportKind.js'
+import { ReportKind, ReportKindConstructor } from './ReportKind.js'
 import { Cache, CacheInit } from './Source.js'
 import { SourceGroup } from './SourceGroup.js'
 
-/// A type representing a diagnostic that is ready to be written to output.
-
-export interface iReport<S extends Span> {
-  kind: typeof ReportKind
-  code: Option<string>
-  msg: Option<string>
-  note: Option<string>
-  help: Option<string>
-  location: [S['SourceId'], number]
-  labels: Label<S>[]
-  config: Config
-  eprint(cache: CacheInit): void
-  print(cache: CacheInit): void
-  printTo(init: CacheInit, writer: Write): void
-}
-
-export class Report<S extends Span> implements iReport<S> {
+/// A type representing a diagnostic that is ready to be rendered.
+export class Report<S extends Span> {
   constructor(
-    public kind: typeof ReportKind,
+    public kind: ReportKindConstructor,
     public code: Option<string>,
     public msg: Option<string>,
     public note: Option<string>,
@@ -55,7 +44,7 @@ export class Report<S extends Span> implements iReport<S> {
 
   /// Begin building a new [`Report`].
   static build<S extends Span, Id extends string>(
-    kind: typeof ReportKind,
+    kind: ReportKindConstructor,
     src_id: Id | null,
     offset: number,
   ): ReportBuilder<S> {
@@ -66,31 +55,19 @@ export class Report<S extends Span> implements iReport<S> {
       none(),
       none(),
       none(),
-      [Option.from(src_id), offset],
+      [src_id ?? '', offset],
       [],
       Config.default(),
     )
     return builder
   }
 
-  /// Write this diagnostic out to `stderr`.
-  eprint(init: CacheInit): void {
+  /// Render this diagnostic to a string.
+  render(init: CacheInit): string {
     const cache = Cache.from(init)
-    this.write(cache, stderrWriter)
-  }
-
-  /// Write this diagnostic out to `stdout`.
-  ///
-  /// In most cases, [`Report::eprint`] is the
-  /// ['more correct'](https://en.wikipedia.org/wiki/Standard_streams#Standard_error_(stderr)) function to use.
-  print(init: CacheInit): void {
-    const cache = Cache.from(init)
-    this.write(cache, stdoutWriter)
-  }
-
-  printTo(init: CacheInit, writer: Write): void {
-    const cache = Cache.from(init)
+    const writer = mkStringWriter()
     this.write(cache, writer)
+    return writer.unwrap()
   }
 
   private get_source_groups(cache: Cache<S['SourceId']>): SourceGroup<S>[] {
@@ -99,25 +76,26 @@ export class Report<S extends Span> implements iReport<S> {
       let src_display = cache.display(label.span.source())
       let res = cache.fetch(label.span.source())
       if (res.is_err()) {
-        console.error(
-          "Unable to fetch source '{}': {}",
-          src_display,
-          res.unwrap(),
+        throw new Error(
+          format("Unable to fetch source '{}': {}", src_display, res.unwrap()),
         )
-        continue
       }
       let src = res.unwrap()
 
-      assert(label.span.start <= label.span.end, 'Label start is after its end')
+      if (label.span.start > label.span.end) {
+        throw new Error('Label start is after its end')
+      }
 
       let start_line = src
         .get_offset_line(label.span.start)
         .map(([_, l, __]) => l)
       let end_line = src
-        .get_offset_line(label.span.end.saturating_sub(1).max(label.span.start))
+        .get_offset_line(
+          maxNumber(saturatingSub(label.span.end, 1), label.span.start),
+        )
         .map(([_, l, __]) => l)
 
-      let label_info = new LabelInfo<any>(
+      let label_info = new LabelInfo<S>(
         start_line.equal(end_line) ? LabelKind.Inline : LabelKind.Multiline,
         label,
       )
@@ -127,8 +105,8 @@ export class Report<S extends Span> implements iReport<S> {
       )
 
       if (group) {
-        group.span.start = group.span.start.min(label.span.start)
-        group.span.end = group.span.end.max(label.span.end)
+        group.span.start = minNumber(group.span.start, label.span.start)
+        group.span.end = maxNumber(group.span.end, label.span.end)
         group.labels.push(label_info)
       } else {
         groups.push(
@@ -143,35 +121,36 @@ export class Report<S extends Span> implements iReport<S> {
     return groups
   }
 
-  /// Write this diagnostic to an implementor of [`Write`].
-  ///
-  /// If you wish to write to `stderr` or `stdout`, you can do so via [`Report::eprint`] or [`Report::print`] respectively.
+  /// Render this diagnostic into an internal string buffer.
   private write<C extends Cache<string>, W extends Write>(
     cache: C,
     w: W,
   ): void {
-    let draw: iCharacters = match(this.config.char_set, [
-      [CharSet.Unicode, () => Characters.unicode()],
-      [CharSet.Ascii, () => Characters.ascii()],
-    ])
+    const draw: iCharacters =
+      this.config.char_set === CharSet.Unicode
+        ? Characters.unicode()
+        : Characters.ascii()
 
     // --- Header ---
 
     let code = this.code ? format('[E{}] ', this.code) : ''
     let id = format('{}{}:', code, this.kind.name)
-    let kind_color = match(this.kind, [
-      [ReportKind.Error, () => this.config.error_color()],
-      [ReportKind.Warning, () => this.config.warning_color()],
-      [ReportKind.Advice, () => this.config.advice_color()],
-      [ReportKind.Custom, (kind: any) => kind.color],
-    ])
+    const kind_color =
+      this.kind === ReportKind.Error
+        ? this.config.error_color()
+        : this.kind === ReportKind.Warning
+          ? this.config.warning_color()
+          : this.kind === ReportKind.Advice
+            ? this.config.advice_color()
+            : none<ColorFn>()
 
     writeln(w, '{} {}', new Display(id).fg(kind_color), new Show(this.msg))
 
     let groups = this.get_source_groups(cache)
 
     // Line number maximum width
-    let filtered_groups = groups.filter_map(
+    let filtered_groups = filterMap(
+      groups,
       ({ span, src_id }: SourceGroup<S>) => {
         let src_name: string = cache
           .display(src_id)!
@@ -181,8 +160,9 @@ export class Report<S extends Span> implements iReport<S> {
         let res = cache.fetch(src_id)
 
         if (res.is_err()) {
-          eprintln('Unable to fetch source {}: {}', src_name, res.unwrap())
-          return null
+          throw new Error(
+            format('Unable to fetch source {}: {}', src_name, res.unwrap()),
+          )
         }
         let src = res.unwrap()
 
@@ -203,7 +183,7 @@ export class Report<S extends Span> implements iReport<S> {
 
     // --- Source sections ---
     let groups_len = groups.length
-    for (let [group_idx, { src_id, span, labels }] of enumerate(groups)) {
+    for (let [group_idx, { src_id, span, labels }] of groups.entries()) {
       let src_name = cache
         .display(src_id)
         .map((d) => d.toString())
@@ -212,8 +192,9 @@ export class Report<S extends Span> implements iReport<S> {
       let res = cache.fetch(src_id)
 
       if (res.is_err()) {
-        eprintln('Unable to fetch source {}: {}', src_name, res.unwrap())
-        continue
+        throw new Error(
+          format('Unable to fetch source {}: {}', src_name, res.unwrap()),
+        )
       }
 
       let src = res.unwrap()
@@ -299,7 +280,6 @@ export class Report<S extends Span> implements iReport<S> {
             draw.vbar,
           )
         } else {
-          // is_ellipsis && console.log('hi mom')
           line_no_margin = format(
             '{}{}',
             new Show([' ', line_no_width + 1]),
@@ -328,9 +308,9 @@ export class Report<S extends Span> implements iReport<S> {
             let multi_label = Option.from(multi_labels[col])
             let line_span = src.line(idx).unwrap().span()
 
-            for (let [i, label] of enumerate(
-              multi_labels.slice(0, (col + 1).min(multi_labels.length)),
-            )) {
+            for (let [i, label] of multi_labels
+              .slice(0, minNumber(col + 1, multi_labels.length))
+              .entries()) {
               let margin = margin_label.filter((m) => label === m.label)
 
               if (
@@ -356,11 +336,12 @@ export class Report<S extends Span> implements iReport<S> {
                   ) {
                     let [_report_row, is_arrow] = report_row.unwrap()
 
-                    let label_row: number = Option.from(
-                      line_labels
-                        .enumerate()
-                        .find(([_, l]) => label === l.label),
-                    ).map_or(0, ([r, _]) => r)
+                    const label_row = Math.max(
+                      0,
+                      line_labels.findIndex((lineLabel) => {
+                        return label === lineLabel.label
+                      }),
+                    )
 
                     if (_report_row === label_row) {
                       if (margin.is_some()) {
@@ -452,7 +433,6 @@ export class Report<S extends Span> implements iReport<S> {
               } else if (vbar.is_some()) {
                 let label: Label<S> = vbar.unwrap()
                 let vb = new Display(is_ellipsis ? draw.vbar_gap : draw.vbar)
-                // is_ellipsis && console.log("hi pops")
                 return [vb.fg(label.color), new Display(' ').fg(none())]
               } else if (margin_ptr.is_some() && is_line) {
                 let [margin, is_start] = margin_ptr.unwrap()
@@ -502,7 +482,7 @@ export class Report<S extends Span> implements iReport<S> {
 
         let line = src.line(idx).unwrap()
 
-        const f_labels = multi_labels.enumerate().filter_map(([_i, label]) => {
+        const f_labels = filterMap(multi_labels, (label) => {
           let is_start = line.span().contains(label.span.start)
           let is_end = line.span().contains(label.last_offset())
           if (is_start) {
@@ -525,18 +505,14 @@ export class Report<S extends Span> implements iReport<S> {
           }
         })
 
-        // let margin_label = min_by_key(f_labels, ll => <any>[ll.col, !ll.label.span.start]);
         let margin_label = min_by_key(f_labels, (ll) => ll.col)
         // .min_by_key(ll => [ll.col, !ll.label.span.start]));
 
         // Generate a list of labels for this line, along with their label columns
-        let line_labels = multi_labels.enumerate().filter_map(([_i, label]) => {
+        let line_labels = filterMap(multi_labels, (label) => {
           let is_start = line.span().contains(label.span.start)
           let is_end = line.span().contains(label.last_offset())
-          if (
-            is_start &&
-            margin_label.map_or(true, (m: any) => label !== m.label)
-          ) {
+          if (is_start && margin_label.map_or(true, (m) => label !== m.label)) {
             // TODO: Check to see whether multi is the first on the start line or first on the end line
             return new LineLabel(
               label.span.start - line.offset(),
@@ -562,19 +538,17 @@ export class Report<S extends Span> implements iReport<S> {
             l.label.span.end <= line.span().end,
         )) {
           if (label_info.kind === LabelKind.Inline) {
-            let col = match(this.config.label_attach, [
-              [LabelAttach.Start, () => label_info.label.span.start],
-              [
-                LabelAttach.Middle,
-                () =>
-                  (label_info.label.span.start + label_info.label.span.end) / 2,
-              ],
-              [LabelAttach.End, () => label_info.label.last_offset()],
-            ])
+            const col =
+              this.config.label_attach === LabelAttach.Start
+                ? label_info.label.span.start
+                : this.config.label_attach === LabelAttach.End
+                  ? label_info.label.last_offset()
+                  : (label_info.label.span.start + label_info.label.span.end) /
+                    2
 
             line_labels.push(
               new LineLabel(
-                col.max(label_info.label.span.start) - line.offset(),
+                maxNumber(col, label_info.label.span.start) - line.offset(),
                 label_info.label,
                 false,
                 true,
@@ -592,7 +566,6 @@ export class Report<S extends Span> implements iReport<S> {
             is_ellipsis = true
           } else {
             if (!this.config.compact && !is_ellipsis) {
-              // console.log(1)
               write_margin(
                 w,
                 idx,
@@ -623,15 +596,14 @@ export class Report<S extends Span> implements iReport<S> {
           line_labels.reduce((l, ll) => {
             return ll.multi
               ? line.len()
-              : l.max(ll.label.span.end.saturating_sub(line.offset()))
+              : maxNumber(l, saturatingSub(ll.label.span.end, line.offset()))
           }, 0) + arrow_end_space
 
         // Should we draw a vertical bar as part of a label arrow on this line?
         let get_vbar = (col: number, row: number): Option<LineLabel<S>> =>
           Option.from(
-            line_labels
+            Array.from(line_labels.entries())
               // Only labels with notes get an arrow
-              .enumerate()
               .filter(
                 ([_, ll]) =>
                   ll.label.msg.is_some() &&
@@ -646,14 +618,12 @@ export class Report<S extends Span> implements iReport<S> {
 
         let get_highlight = (col: number): Option<Label<S>> =>
           min_by_key(
-            margin_label
-              .iter()
-              .map((ll) => ll.label)
-              .chain(multi_labels.map((l) => l))
-              .chain(line_labels.map((l) => l.label))
-              .filter((l) => l.span.contains(line.offset() + col)),
+            [
+              ...margin_label.iter().map((ll) => ll.label),
+              ...multi_labels,
+              ...line_labels.map((l) => l.label),
+            ].filter((l) => l.span.contains(line.offset() + col)),
             // Prioritise displaying smaller spans
-            // .min_by_key((l: any) => [-l.priority, l.span.len()]);
             // .min_by_key(l => l.span.len()));
             (l) => -l.priority + l.span.len(),
           )
@@ -662,7 +632,7 @@ export class Report<S extends Span> implements iReport<S> {
 
         let get_underline = (col: number): Option<LineLabel<S>> =>
           min_by_key(
-            line_labels.filter((ll: any) => {
+            line_labels.filter((ll) => {
               return (
                 this.config.underlines &&
                 // Underlines only occur for inline spans (highlighting can occur for all spans)
@@ -679,7 +649,6 @@ export class Report<S extends Span> implements iReport<S> {
         // ll => -ll.label.priority);
 
         // Margin
-        // is_ellipsis && console.log(2)
         write_margin(
           w,
           idx,
@@ -693,7 +662,7 @@ export class Report<S extends Span> implements iReport<S> {
 
         // Line
         if (!is_ellipsis) {
-          for (let [col, _c] of enumerate(line.chars() as any as string[])) {
+          for (let [col, _c] of [...line.chars()].entries()) {
             let highlight = get_highlight(col)
             let color = highlight.is_some()
               ? highlight.unwrap().color
@@ -712,7 +681,6 @@ export class Report<S extends Span> implements iReport<S> {
 
           if (!this.config.compact) {
             // Margin alternate
-            // console.log(3)
             write_margin(
               w,
               idx,
@@ -798,7 +766,6 @@ export class Report<S extends Span> implements iReport<S> {
           }
 
           // Margin
-          // console.log(4)
           write_margin(
             w,
             idx,
@@ -824,7 +791,7 @@ export class Report<S extends Span> implements iReport<S> {
                   col > line_label.col)) &&
               line_label.label.msg.is_some()
 
-            const getctail = (): [any, any] => {
+            const getctail = (): [Display, Display] => {
               if (
                 col === line_label.col &&
                 line_label.label.msg.is_some() &&
@@ -907,11 +874,9 @@ export class Report<S extends Span> implements iReport<S> {
       if (this.help.is_some() && is_final_group) {
         let note = this.help.unwrap()
         if (!this.config.compact) {
-          console.log(5)
           write_margin(w, 0, false, false, true, some([0, false]), [], none())
           write(w, '\n')
         }
-        console.log(6)
         write_margin(w, 0, false, false, true, some([0, false]), [], none())
         write(
           w,
@@ -925,11 +890,9 @@ export class Report<S extends Span> implements iReport<S> {
       if (this.note.is_some() && is_final_group) {
         let note = this.note.unwrap()
         if (!this.config.compact) {
-          // console.log(7)
           write_margin(w, 0, false, false, true, some([0, false]), [], none())
           write(w, '\n')
         }
-        // console.log(8)
         write_margin(w, 0, false, false, true, some([0, false]), [], none())
         write(
           w,
@@ -995,21 +958,6 @@ export class Report<S extends Span> implements iReport<S> {
   }
 }
 
-type MatchResult<T> = T extends abstract new (...args: any) => infer RT ? RT : T
-
-function match<T, R>(kind: T, matchers: [T, (arg: MatchResult<T>) => R][]): R {
-  for (let [type, then] of matchers) {
-    // TODO: fixme .. this is a hack
-    if (<any>kind === type) return then(kind as any)
-  }
-  return null as any
-}
-
-function* enumerate<T>(groups: T[]) {
-  for (let i = 0; i < groups.length; i++) yield [i, groups[i]] as [number, T]
-  return
-}
-
 function* map<a, b>(a: Iterator<a>, f: (a: a) => b) {
   let value = a.next()
   while (value.done === false) {
@@ -1041,7 +989,7 @@ function count<a>(a: Iterator<a>) {
   return to_array(a).length
 }
 
-function makeIter<T extends any[] | string>(arr: T) {
+function makeIter<T extends readonly string[] | string>(arr: T) {
   let cursor = 0
   let next = (): Option<string> => {
     const res = arr[cursor++]

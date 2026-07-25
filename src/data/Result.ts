@@ -5,39 +5,21 @@ class Ok<T, E> {
   map<R>(fn: (value: T) => R): Result<R, E> {
     return ok(fn(this.value))
   }
-  map_or<R>(d: R, fn: (val: T) => R): Result<R, E> {
-    return ok(fn(this.value))
-  }
-  or(d: Result<T, E>): Result<T, E> {
-    return this
-  }
-  is_ok(): this is Ok<T, E> {
-    return true
-  }
   is_err(): this is Err<T, E> {
     return false
   }
   unwrap(): T {
     return this.value
   }
-  unwrap_or_else<R>(d: (v: T) => R): R {
-    return d(this.value)
-  }
-  static is<T, E>(o: Result<T, E>): o is Ok<T, E> {
-    return o instanceof Ok
+  unwrap_or_else(): T {
+    return this.value
   }
 }
 
 export class Err<T, E> {
   constructor(private value: E) {}
-  map<R>(fn: (value: E) => R): Result<R, E> {
-    return ok(fn(this.value))
-  }
-  map_or<R>(d: R, fn: (val: T) => R): Result<R, E> {
-    return ok(d)
-  }
-  or(d: Result<T, E>): Result<T, E> {
-    return d
+  map<R>(): Result<R, E> {
+    return err(this.value)
   }
   unwrap(): E {
     return this.value
@@ -45,14 +27,8 @@ export class Err<T, E> {
   unwrap_or_else<R>(d: (v: E) => R): R {
     return d(this.value)
   }
-  is_ok(): this is Ok<T, E> {
-    return false
-  }
   is_err(): this is Err<T, E> {
     return true
-  }
-  static is<T, E>(o: Result<T, E>): o is Err<T, E> {
-    return o instanceof Err
   }
 }
 
@@ -64,6 +40,6 @@ export const err = <T, E>(value: E): Result<T, E> => {
   return new Err<T, E>(value)
 }
 
-export const isResult = (o: any): o is Result<any, any> => {
+export const isResult = (o: unknown): o is Result<unknown, unknown> => {
   return o instanceof Ok || o instanceof Err
 }

@@ -5,7 +5,7 @@ import { isResult, Result } from './data/Result.js'
 import { Write } from './data/Write.js'
 import { isShow, Show } from './data/Show.js'
 
-export type Displayable<T = any, E = any> =
+export type Displayable<T = unknown, E = unknown> =
   Display | Show | Option<T> | Result<T, E> | string | number
 
 export function write<W extends Write>(w: W, ...args: Displayable[]) {
@@ -22,30 +22,26 @@ export function format(...args: Displayable[]): string {
   })
 }
 
-function fromRust(node: Displayable): string {
-  if (isDisplay(node)) {
-    return node.display()
+function fromRust(value: Displayable): string {
+  if (isDisplay(value)) {
+    return value.display()
   }
-  if (isShow(node)) {
+  if (isShow(value)) {
     let f = stringFormatter()
-    node.fmt(f)
+    value.fmt(f)
     return f.unwrap()
   }
-  if (isOption<string>(node)) {
-    return node.unwrap_or_else(() => '')
+  if (isOption<string>(value)) {
+    return value.unwrap_or_else(() => '')
   }
-  if (isResult(node)) {
-    return node.unwrap_or_else(() => '<(Unwrap Err)>')
+  if (isResult(value)) {
+    return String(value.unwrap_or_else(() => '<(Unwrap Err)>'))
   }
-  return node.toString()
+  return value.toString()
 }
 
 export function writeln<W extends Write>(w: W, ...args: Displayable[]) {
   let val = format(...args.map(fromRust))
   w.write_fmt(val)
   w.write_fmt('\n')
-}
-
-export function eprintln(...args: Displayable[]): void {
-  console.error(format(...args))
 }

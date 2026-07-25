@@ -1,17 +1,18 @@
-import assert from 'node:assert'
-import { readFileSync } from 'node:fs'
 import { Display } from '../data/Display.js'
 import { none, Option, some } from '../data/Option.js'
 import { err, ok, Result } from '../data/Result.js'
 import { Span } from '../data/Span.js'
 import { Range } from '../data/Range.js'
-import { binary_search_by_key } from '../utils/index.js'
+import {
+  binary_search_by_key,
+  maxNumber,
+  saturatingSub,
+} from '../utils/index.js'
 import { Displayable, format } from '../write.js'
 
 export type ErrMsg = string
 
-export type CacheInit =
-  [id: string, source: Source] | Source | FnCache<string, any>
+export type CacheInit = [id: string, source: Source] | Source | FnCache<string>
 
 /// A trait implemented by [`Source`] caches.
 export abstract class Cache<Id> {
@@ -23,10 +24,10 @@ export abstract class Cache<Id> {
   /// This function may make use of attributes from the [`Fmt`] trait.
   abstract display(id: Id): Option<Displayable>
 
-  static from(init: CacheInit) {
+  static from(init: CacheInit): Cache<string> {
     if (Source.is(init)) return init
     if (FnCache.is(init)) return init
-    const [id, source] = init
+    const [, source] = init
     return new IdSource(source.lines(), source.len(), init)
   }
 }
@@ -71,7 +72,7 @@ export class Source implements Cache<string> {
   /// Generate a [`Source`] from the given [`str`].
   ///
   /// Note that this function can be expensive for long strings. Use an implementor of [`Cache`] where possible.
-  static from(s: string, ...args: any[]): Source {
+  static from(s: string): Source {
     let offset = 0
     const lines = s
       .split('\n') // TODO: Handle non-\n newlines
@@ -96,7 +97,7 @@ export class Source implements Cache<string> {
   chars(): string {
     return this.lines()
       .map((l) => l.chars())
-      .flat() as any // TODO
+      .join('\n')
   }
 
   /// Get access to a specific, zero-indexed [`Line`].
@@ -127,7 +128,9 @@ export class Source implements Cache<string> {
         line?.offset() ?? Infinity,
         idx,
       )
-      assert(line && offset >= line.offset(), fstring)
+      if (!line || offset < line.offset()) {
+        throw new Error(fstring)
+      }
       const os = line.offset()
       return some([line, idx, offset - os])
     } else {
@@ -142,20 +145,20 @@ export class Source implements Cache<string> {
   get_line_range(span: Span): Range {
     let start = this.get_offset_line(span.start).map_or(0, ([_, l, __]) => l)
     let end = this.get_offset_line(
-      span.end.saturating_sub(1).max(span.start),
+      maxNumber(saturatingSub(span.end, 1), span.start),
     ).map_or(this.lines().length, ([_, l, __]) => l + 1)
     // start..end
     return new Range(start, end)
   }
 
-  fetch(_: any): Result<Source, ErrMsg> {
+  fetch(_id: string): Result<Source, ErrMsg> {
     return ok(this)
   }
-  display(_: any): Option<Displayable> {
+  display(_id: string): Option<Displayable> {
     return none()
   }
 
-  static is(other: any): other is Source {
+  static is(other: unknown): other is Source {
     return other instanceof Source
   }
 }
@@ -178,48 +181,16 @@ export class IdSource extends Source {
   }
 }
 
-type PathBuf = {}
-type Path = {
-  to_path_buf(): PathBuf
-  display(): Option<Display>
-  toString(): string
-}
-
-/// A [`Cache`] that fetches [`Source`]s from the filesystem.
-export class FileCache implements Cache<Path> {
-  constructor(public files: Map<PathBuf, Source>) {}
-
-  static default(): FileCache {
-    return new FileCache(new Map() /* HashMap::default() */)
-  }
-
-  fetch(path: Path): Result<Source, ErrMsg> {
-    const entry = this.files.get(path.to_path_buf())
-    if (entry !== undefined) return ok(entry)
-
-    const source = Source.from(readFileSync(path.toString()) + '')
-    this.files.set(path.to_path_buf(), source)
-    return ok(source)
-  }
-  display(path: Path): Option<Displayable> {
-    return path.display()
-  }
-
-  static is(other: any): other is FileCache {
-    return other instanceof FileCache
-  }
-}
-
 /// A [`Cache`] that fetches [`Source`]s using the provided function.
-export class FnCache<Id, F extends Function> implements Cache<Id> {
+export class FnCache<Id> implements Cache<Id> {
   constructor(
     public sources: Map<Id, Source>,
-    public get: F,
+    public get: (id: Id) => string,
   ) {}
 
   /// Create a new [`FnCache`] with the given fetch function.
-  static new<Id, F extends Function>(get: F): FnCache<Id, F> {
-    return new FnCache<Id, F>(new Map() /* HashMap::default() */, get)
+  static new<Id>(get: (id: Id) => string): FnCache<Id> {
+    return new FnCache<Id>(new Map() /* HashMap::default() */, get)
   }
 
   /// Pre-insert a selection of [`Source`]s into this cache.
@@ -230,7 +201,7 @@ export class FnCache<Id, F extends Function> implements Cache<Id> {
     }
     return this
   }
-  fetch(id: any): Result<Source, ErrMsg> {
+  fetch(id: Id): Result<Source, ErrMsg> {
     const entry = this.sources.get(id)
     if (entry !== undefined) return ok(entry)
 
@@ -238,21 +209,19 @@ export class FnCache<Id, F extends Function> implements Cache<Id> {
     this.sources.set(id, source)
     return ok(source)
   }
-  display(id: any): Option<Displayable> {
-    return some(id)
+  display(id: Id): Option<Displayable> {
+    return some(String(id))
   }
 
-  static is(other: any): other is FnCache<any, any> {
+  static is(other: unknown): other is FnCache<string> {
     return other instanceof FnCache
   }
 }
 
 /// Create a [`Cache`] from a collection of ID/strings, where each corresponds to a [`Source`].
-export function sources<
-  Id extends string,
-  S,
-  I extends Array<[string, string]>,
->(iter: I): FnCache<any, any> {
+export function sources<Id extends string, I extends Array<[Id, string]>>(
+  iter: I,
+): FnCache<Id> {
   return FnCache.new((id: Id) =>
     format("Failed to fetch source '{}'", id),
   ).with_sources(iter.map(([id, s]) => [id, Source.from(s)] as [Id, Source]))

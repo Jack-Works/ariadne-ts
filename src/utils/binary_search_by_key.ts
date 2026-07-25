@@ -1,8 +1,8 @@
 import { err, ok, Result } from '../data/Result.js'
 
 export function binary_search_by_key<T>(
-  arr: T[],
-  x: any,
+  arr: readonly T[],
+  x: number,
   fn: (o: T) => number,
 ): Result<number, number> {
   let start = 0,
@@ -27,7 +27,11 @@ export function binary_search_by_key<T>(
 
   return err(get_sorted_index(arr, x, fn))
 }
-function get_sorted_index(arr: any[], x: any, fn: any) {
+function get_sorted_index<T>(
+  arr: readonly T[],
+  x: number,
+  fn: (value: T) => number,
+): number {
   let low = 0,
     high = arr.length
 

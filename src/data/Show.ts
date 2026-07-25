@@ -1,11 +1,11 @@
 import { Formatter } from './Formatter.js'
 import { isOption } from './Option.js'
 import { isResult } from './Result.js'
-import { isCallback, range } from '../utils/index.js'
+import { isCallback } from '../utils/index.js'
 import { write } from '../write.js'
 
 export class Show {
-  constructor(public self: any) {}
+  constructor(public self: unknown) {}
   fmt(f: Formatter): void {
     if (isOption<string>(this.self)) {
       this.self.map((x) => new Show(x).fmt(f))
@@ -21,24 +21,32 @@ export class Show {
     }
     // TODO: this is all probably wrong
     if (Array.isArray(this.self) && this.self.length === 2) {
-      if (isCallback(this.self[1])) {
-        for (let x of this.self[0]) {
-          const func = this.self[1]
-          func(f, x)
+      const [value, operation] = this.self
+      if (
+        isCallback(operation) &&
+        typeof value === 'object' &&
+        value !== null &&
+        Symbol.iterator in value
+      ) {
+        const render = operation as (
+          formatter: Formatter,
+          item: unknown,
+        ) => void
+        for (const item of value as Iterable<unknown>) {
+          render(f, item)
         }
-      } else {
-        for (let _ of range(0, this.self[1])) {
-          write(f.buf, '{}', this.self[0])
+      } else if (typeof operation === 'number') {
+        for (let count = 0; count < operation; count++) {
+          write(f.buf, '{}', String(value))
         }
       }
     } else {
-      const x = this.self[0]
-      write(f.buf, '{}', x)
+      write(f.buf, '{}', String(this.self))
       return
     }
   }
 
-  static is = (o: any): o is Show => o instanceof Show
+  static is = (o: unknown): o is Show => o instanceof Show
 }
 
 export const isShow = Show.is

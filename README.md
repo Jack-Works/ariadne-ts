@@ -34,78 +34,9 @@ This library is a direct port of the excellent Rust crate [`ariadne`](https://gi
 pnpm add @magic-works/ariadne
 ```
 
-## Usage
+## Examples
 
-Here's how to generate a detailed error report. First, imagine you have a source file named `sample.tao`:
-
-```rust
-def five = match () in {
-    () => 5,
-    () => "5",
-}
-
-def six =
-    five
-    + 1
-```
-
-Now, you can use `@magic-works/ariadne` to build a report that pinpoints an incompatibility between the `Nat` and `Str` types within the `match` expression's arms.
-
-```typescript
-import {
-    Label,
-    Range,
-    Report,
-    ReportKind,
-    Source,
-    include_str,
-} from '@magic-works/ariadne'
-
-Report.build(ReportKind.Error, 'sample.tao', 34)
-    .with_code(3)
-    .with_message('Incompatible types')
-    .with_label(
-        Label.from(['sample.tao', Range.new(32, 33)]).with_message(
-            'This is of type Nat',
-        ),
-    )
-    .with_label(
-        Label.from(['sample.tao', Range.new(42, 45)]).with_message(
-            'This is of type Str',
-        ),
-    )
-    .with_label(
-        Label.from(['sample.tao', Range.new(11, 49)]).with_message(
-            'The values are outputs of this match expression.',
-        ),
-    )
-    .with_note('Outputs of match expressions must coerce to the same type')
-    .finish()
-    .print(['sample.tao', Source.from(include_str('sample.tao'))])
-```
-
-### Resulting Output
-
-This code produces a beautiful, easy-to-understand diagnostic in the terminal:
-
-```text
-[E03] : Incompatible types
-   ╭─[sample.tao:2:8]
-   │
- 1 │ ╭─▶ def five = match () in {
- 2 │ │       () => 5,
-   · │             ┬
-   · │             ╰── This is of type Nat
- 3 │ │       () => "5",
-   · │             ─┬─
-   · │              ╰─── This is of type Str
- 4 │ ├─▶ }
-   · │
-   · ╰─────── The values are outputs of this match expression.
-   ·
-   ·     Note: Outputs of match expressions must coerce to the same type
-───╯
-```
+TypeScript examples are available in the [`examples`](./examples) directory.
 
 ## Contributing
 

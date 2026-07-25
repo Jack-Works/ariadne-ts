@@ -2,6 +2,7 @@ import { ColorFn } from './Color.js'
 import { none, Option, some } from '../data/Option.js'
 import { SpanInit } from '../data/Span.js'
 import { Range } from '../data/Range.js'
+import { maxNumber, saturatingSub } from '../utils/index.js'
 
 /// A type that represents a labelled section of source code.
 export interface Label<S extends Range> {
@@ -64,7 +65,7 @@ export class Label<S> {
   }
 
   last_offset(): number {
-    return this.span.end.saturating_sub(1).max(this.span.start)
+    return maxNumber(saturatingSub(this.span.end, 1), this.span.start)
   }
 
   static from = Label.new
@@ -73,7 +74,7 @@ export class Label<S> {
     return new Label(Range.from(obj)) as Label<S>
   }
 
-  static is<S extends Range>(other: any): other is Label<S> {
+  static is<S extends Range>(other: unknown): other is Label<S> {
     return other instanceof Label
   }
 }

@@ -2,25 +2,14 @@ import { Option, some } from '../data/Option.js'
 import { Span } from '../data/Span.js'
 import { Config } from './Config.js'
 import { Label } from './Label.js'
-import { iReport, Report } from './Report.js'
-import { ReportKind } from './ReportKind.js'
+import { Report } from './Report.js'
+import { ReportKindConstructor } from './ReportKind.js'
 
 /// A type used to build a [`Report`].
 
-export interface iReportBuilder<S extends Span> {
-  kind: ReportKind
-  code: string
-  msg: string
-  note: string
-  help: string
-  location: [S['SourceId'] /* ::Owned */, number]
-  labels: Label<S>[]
-  config: Config
-}
-
 export class ReportBuilder<S extends Span> {
   constructor(
-    private kind: typeof ReportKind,
+    private kind: ReportKindConstructor,
     private code: Option<string>,
     private msg: Option<string>,
     private note: Option<string>,
@@ -91,7 +80,7 @@ export class ReportBuilder<S extends Span> {
   }
 
   /// Finish building the [`Report`].
-  finish(): iReport<S> {
+  finish(): Report<S> {
     const r = new Report<S>(
       this.kind,
       this.code,

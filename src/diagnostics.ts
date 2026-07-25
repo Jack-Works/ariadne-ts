@@ -1,14 +1,11 @@
 import { Display } from './data/Display.js'
 import { Range } from './data/Range.js'
-import { mkStringWriter } from './data/Write.js'
 import { ColorFn, Color, Fixed } from './lib/Color.js'
-import { ColorGenerator } from './lib/ColorGenerator.js'
 import { Config } from './lib/Config.js'
 import { Label } from './lib/Label.js'
 import { Report } from './lib/Report.js'
 import { ReportKind } from './lib/ReportKind.js'
-import { Source, sources } from './lib/Source.js'
-import { include_str } from './utils/include_str.js'
+import { Source } from './lib/Source.js'
 import { format } from './write.js'
 
 type ColorName = 'red' | 'green' | 'yellow' | 'blue'
@@ -35,8 +32,6 @@ type LabelDef = {
   fstring: string | Fstring
   color?: ColorArg
 }
-
-let colorGen = ColorGenerator.new()
 
 const getColorFn = (color: ColorArg): ColorFn => {
   switch (color) {
@@ -92,15 +87,7 @@ export function createDiagnostic(options: {
   labels: LabelDef[]
   note?: string | Fstring
   tabWidth?: number
-  source:
-    | {
-        type: 'file'
-        path: string
-      }
-    | {
-        type: 'string'
-        data: string
-      }
+  source: string
 }) {
   const {
     filename,
@@ -140,11 +127,8 @@ export function createDiagnostic(options: {
   // .with_multiline_arrows(false)
   // .with_tab_width(tabWidth))
 
-  const targetSource =
-    source.type === 'file' ? include_str(source.path) : source.data
-
-  report
+  return report
     .with_config(config)
     .finish()
-    .print([filename, Source.from(targetSource)])
+    .render([filename, Source.from(source)])
 }

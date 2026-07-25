@@ -1,4 +1,4 @@
-import { isNumber, isString, range } from '../utils/index.js'
+import { isNumber, isString, range, saturatingSub } from '../utils/index.js'
 import { Range } from './Range.js'
 
 export type SpanInit =
@@ -10,7 +10,7 @@ export class Span {
     private _end: number,
   ) {}
   /// The identifier used to uniquely refer to a source. In most cases, this is the fully-qualified path of the file.
-  public SourceId: any
+  public SourceId = ''
 
   /// Get the identifier of the source that this span refers to.
   source() {
@@ -32,7 +32,7 @@ export class Span {
 
   /// Get the length of this span (difference between the start of the span and the end of the span).
   len(): number {
-    return this.end.saturating_sub(this.start)
+    return saturatingSub(this.end, this.start)
   }
 
   /// Determine whether the span contains the given offset.
@@ -40,7 +40,7 @@ export class Span {
     return range(this.start, this.end).includes(offset)
   }
 
-  static is = (o: any): o is Span => o instanceof Span
+  static is = (o: unknown): o is Span => o instanceof Span
 
   static from(o: SpanInit) {
     if (isNumber(o[0]) && isNumber(o[1])) return new Span(o[0], o[1])

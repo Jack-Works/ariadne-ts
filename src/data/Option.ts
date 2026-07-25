@@ -20,14 +20,14 @@ class Some<T> implements Option<T> {
   map<R>(fn: (value: T) => R): Option<R> {
     return some(fn(this.value))
   }
-  map_or<R>(d: R, fn: (val: T) => R): R {
-    return fn(this.value)
+  map_or<R>(...args: [R, (val: T) => R]): R {
+    return args[1](this.value)
   }
   filter(fn: (m: T) => boolean): Option<T> {
     if (fn(this.value)) return some(this.value)
     return none()
   }
-  or(d: Option<T>): Option<T> {
+  or(): Option<T> {
     return this
   }
   iter(): T[] {
@@ -36,7 +36,7 @@ class Some<T> implements Option<T> {
   unwrap(): T {
     return this.value
   }
-  unwrap_or_else(d: () => T): T {
+  unwrap_or_else(): T {
     return this.unwrap()
   }
   is_some(): this is Some<T> {
@@ -49,19 +49,16 @@ class Some<T> implements Option<T> {
     if (other.is_some()) return this.value === other.value
     return false
   }
-  static is<T>(o: Option<T>): o is Some<T> {
-    return o instanceof Some
-  }
 }
 
 class None<T> implements Option<T> {
-  map<R>(fn: (value: T) => R): Option<R> {
+  map<R>(): Option<R> {
     return none()
   }
-  map_or<R>(d: R, fn: (val: T) => R): R {
-    return d
+  map_or<R>(defaultValue: R): R {
+    return defaultValue
   }
-  filter(fn: (m: T) => boolean): Option<T> {
+  filter(): Option<T> {
     return none()
   }
   or(d: Option<T>): Option<T> {
@@ -85,9 +82,6 @@ class None<T> implements Option<T> {
   equal(other: Option<T>): boolean {
     return other.is_none()
   }
-  static is<T>(o: Option<T>): o is None<T> {
-    return o instanceof None
-  }
 }
 
 export const some = <T>(value: T): Option<T> => {
@@ -98,6 +92,6 @@ export const none = <T>(): Option<T> => {
   return new None()
 }
 
-export const isOption = <T>(o: any): o is Option<T> => {
+export const isOption = <T>(o: unknown): o is Option<T> => {
   return o instanceof Some || o instanceof None
 }
