@@ -1,6 +1,5 @@
-
-import { Range } from "../data/Range.js";
-import { Label } from "./Label.js";
+import { Range } from '../data/Range.js'
+import { Label } from './Label.js'
 
 export enum LabelKind {
   Inline = 'Inline',

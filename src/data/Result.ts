@@ -1,4 +1,4 @@
-export type Result<T, E> = Ok<T, E> | Err<T, E>;
+export type Result<T, E> = Ok<T, E> | Err<T, E>
 
 class Ok<T, E> {
   constructor(private value: T) {}
@@ -11,8 +11,12 @@ class Ok<T, E> {
   or(d: Result<T, E>): Result<T, E> {
     return this
   }
-  is_ok(): this is Ok<T, E> { return true }
-  is_err(): this is Err<T, E> { return false }
+  is_ok(): this is Ok<T, E> {
+    return true
+  }
+  is_err(): this is Err<T, E> {
+    return false
+  }
   unwrap(): T {
     return this.value
   }
@@ -41,15 +45,19 @@ export class Err<T, E> {
   unwrap_or_else<R>(d: (v: E) => R): R {
     return d(this.value)
   }
-  is_ok(): this is Ok<T, E> { return false }
-  is_err(): this is Err<T, E> { return true }
+  is_ok(): this is Ok<T, E> {
+    return false
+  }
+  is_err(): this is Err<T, E> {
+    return true
+  }
   static is<T, E>(o: Result<T, E>): o is Err<T, E> {
     return o instanceof Err
   }
 }
 
 export const ok = <T, E>(value: T): Result<T, E> => {
-  return new Ok<T, E>(value);
+  return new Ok<T, E>(value)
 }
 
 export const err = <T, E>(value: E): Result<T, E> => {

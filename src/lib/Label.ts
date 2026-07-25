@@ -1,37 +1,37 @@
-import { ColorFn } from "./Color.js";
-import { none, Option, some } from "../data/Option.js";
-import { SpanInit } from "../data/Span.js";
-import { Range } from "../data/Range.js";
+import { ColorFn } from './Color.js'
+import { none, Option, some } from '../data/Option.js'
+import { SpanInit } from '../data/Span.js'
+import { Range } from '../data/Range.js'
 
 /// A type that represents a labelled section of source code.
 export interface Label<S extends Range> {
-  span: S;
-  msg: Option<string>;
-  color: Option<ColorFn>;
-  order: number;
-  priority: number;
+  span: S
+  msg: Option<string>
+  color: Option<ColorFn>
+  order: number
+  priority: number
 }
 
 export class Label<S> {
   /// Create a new [`Label`].
   constructor(span: S) {
-    this.span = span;
-    this.msg = none();
-    this.color = none();
-    this.order = 0;
-    this.priority = 0;
+    this.span = span
+    this.msg = none()
+    this.color = none()
+    this.order = 0
+    this.priority = 0
   }
 
   /// Give this label a message.
   with_message(msg: string): this {
-    this.msg = some(msg);
-    return this;
+    this.msg = some(msg)
+    return this
   }
 
   /// Give this label a highlight colour.
   with_color(color: ColorFn): this {
-    this.color = some(color);
-    return this;
+    this.color = some(color)
+    return this
   }
 
   /// Specify the order of this label relative to other labels.
@@ -45,8 +45,8 @@ export class Label<S> {
   /// Additionally, multi-line labels are ordered before inline labels. You can this this function to override this
   /// behaviour.
   with_order(order: number): this {
-    this.order = order;
-    return this;
+    this.order = order
+    return this
   }
 
   /// Specify the priority of this label relative to other labels.
@@ -59,8 +59,8 @@ export class Label<S> {
   /// purposes such as highlighting. By default, spans with a smaller length get a higher priority. You can this this
   /// function to override this behaviour.
   with_priority(priority: number): this {
-    this.priority = priority;
-    return this;
+    this.priority = priority
+    return this
   }
 
   last_offset(): number {
@@ -73,7 +73,7 @@ export class Label<S> {
     return new Label(Range.from(obj)) as Label<S>
   }
 
-  static is<S extends Range>(other: any): other is Label<S>{
+  static is<S extends Range>(other: any): other is Label<S> {
     return other instanceof Label
   }
 }

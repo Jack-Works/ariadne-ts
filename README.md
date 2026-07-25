@@ -1,17 +1,18 @@
+# @magic-works/ariadne
 
-# ariadne-ts
+> This is a fork of [ariadne-ts](https://github.com/Duroktar/ariadne-ts/)
 
-[![npm version](https://img.shields.io/npm/v/ariadne-ts.svg?style=flat-square)](https://www.npmjs.com/package/ariadne-ts)
-[![build status](https://img.shields.io/github/actions/workflow/status/Duroktar/ariadne-ts/ci.yml?style=flat-square)](https://github.com/Duroktar/ariadne-ts/actions)
-[![license](https://img.shields.io/npm/l/ariadne-ts.svg?style=flat-square)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/@magic-works/ariadne.svg?style=flat-square)](https://www.npmjs.com/package/@magic-works/ariadne)
+[![release status](https://img.shields.io/github/actions/workflow/status/Jack-Works/ariadne-ts/release.yml?style=flat-square)](https://github.com/Jack-Works/ariadne-ts/actions/workflows/release.yml)
+[![license](https://img.shields.io/npm/l/@magic-works/ariadne.svg?style=flat-square)](./LICENSE)
 
 A TypeScript library for generating beautiful, Rust-style compiler diagnostics.
 
-`ariadne-ts` helps you create elegant, informative, and context-aware error reports for compilers, linters, static analyzers, or any other tool that needs to report errors in source code.
+`@magic-works/ariadne` helps you create elegant, informative, and context-aware error reports for compilers, linters, static analyzers, or any other tool that needs to report errors in source code.
 
 ![Ariadne-ts Example Output](https://raw.githubusercontent.com/zesterer/ariadne/main/misc/example.png)
 
-*The screenshot above is from the original Rust library, but `ariadne-ts` produces identically-styled text-based output.*
+_The screenshot above is from the original Rust library, but `@magic-works/ariadne` produces identically-styled text-based output._
 
 ## About
 
@@ -21,22 +22,16 @@ This library is a direct port of the excellent Rust crate [`ariadne`](https://gi
 
 ## Features
 
--   **Multi-Label Diagnostics:** Attach multiple labels to a single report to highlight related code locations.
--   **Custom Colors & Themes:** Full control over the colors used in your reports to match your tool's branding or user preferences.
--   **Complex Pointer Support:** Create clear, non-overlapping annotations for even the most complex and nested code structures.
--   **Informative Notes & Help Text:** Add extra notes and hints to your reports to guide users toward a solution.
--   **Framework-Agnostic:** Pure TypeScript with minimal dependencies, easy to integrate into any project.
+- **Multi-Label Diagnostics:** Attach multiple labels to a single report to highlight related code locations.
+- **Custom Colors & Themes:** Full control over the colors used in your reports to match your tool's branding or user preferences.
+- **Complex Pointer Support:** Create clear, non-overlapping annotations for even the most complex and nested code structures.
+- **Informative Notes & Help Text:** Add extra notes and hints to your reports to guide users toward a solution.
+- **Framework-Agnostic:** Pure TypeScript with minimal dependencies, easy to integrate into any project.
 
 ## Installation
 
 ```bash
-npm install ariadne-ts
-````
-
-or
-
-```bash
-yarn add ariadne-ts
+pnpm add @magic-works/ariadne
 ```
 
 ## Usage
@@ -54,21 +49,39 @@ def six =
     + 1
 ```
 
-Now, you can use `ariadne-ts` to build a report that pinpoints an incompatibility between the `Nat` and `Str` types within the `match` expression's arms.
+Now, you can use `@magic-works/ariadne` to build a report that pinpoints an incompatibility between the `Nat` and `Str` types within the `match` expression's arms.
 
 ```typescript
-import { Label, Range, Report, ReportKind, Source, include_str } from "ariadne-ts"
+import {
+    Label,
+    Range,
+    Report,
+    ReportKind,
+    Source,
+    include_str,
+} from '@magic-works/ariadne'
 
-Report.build(ReportKind.Error, "sample.tao", 34)
-  .with_code(3)
-  .with_message("Incompatible types")
-  .with_label(Label.from(["sample.tao", Range.new(32, 33)]).with_message("This is of type Nat"))
-  .with_label(Label.from(["sample.tao", Range.new(42, 45)]).with_message("This is of type Str"))
-  .with_label(Label.from(["sample.tao", Range.new(11, 49)]).with_message("The values are outputs of this match expression."))
-  .with_note("Outputs of match expressions must coerce to the same type")
-  .finish()
-  .print(["sample.tao", Source.from(include_str("sample.tao"))])
-
+Report.build(ReportKind.Error, 'sample.tao', 34)
+    .with_code(3)
+    .with_message('Incompatible types')
+    .with_label(
+        Label.from(['sample.tao', Range.new(32, 33)]).with_message(
+            'This is of type Nat',
+        ),
+    )
+    .with_label(
+        Label.from(['sample.tao', Range.new(42, 45)]).with_message(
+            'This is of type Str',
+        ),
+    )
+    .with_label(
+        Label.from(['sample.tao', Range.new(11, 49)]).with_message(
+            'The values are outputs of this match expression.',
+        ),
+    )
+    .with_note('Outputs of match expressions must coerce to the same type')
+    .finish()
+    .print(['sample.tao', Source.from(include_str('sample.tao'))])
 ```
 
 ### Resulting Output
@@ -81,15 +94,15 @@ This code produces a beautiful, easy-to-understand diagnostic in the terminal:
    │
  1 │ ╭─▶ def five = match () in {
  2 │ │       () => 5,
-   · │             ┬  
+   · │             ┬
    · │             ╰── This is of type Nat
  3 │ │       () => "5",
-   · │             ─┬─  
+   · │             ─┬─
    · │              ╰─── This is of type Str
  4 │ ├─▶ }
-   · │       
+   · │
    · ╰─────── The values are outputs of this match expression.
-   ·     
+   ·
    ·     Note: Outputs of match expressions must coerce to the same type
 ───╯
 ```
@@ -100,13 +113,9 @@ Contributions are welcome\! Please feel free to open an issue or submit a pull r
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](https://www.google.com/search?q=./LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
 ## Acknowledgements
 
-  - A huge thank you to [zesterer](https://github.com/zesterer) and all the contributors to the original [`ariadne`](https://github.com/zesterer/ariadne) for creating such a fantastic library.
-
-## Support
-
-Your crypto donations are greatly appreciated!
-Bitcoin (BTC): `3CjmTh15TJiH83bxGKWaRzuHSUqQVEvoHd` | Ethereum (ETH): `0xC7cf910c6993187149CCe1816332d19832Ca2ABB`
+- A huge thank you to [zesterer](https://github.com/zesterer) and all the contributors to the original [`ariadne`](https://github.com/zesterer/ariadne) for creating such a fantastic library.
+- A huge thank you to [Duroktar](https://github.com/Duroktar) and all the contributors to the port of Rust's ariadne to TypeScript.

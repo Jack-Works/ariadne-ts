@@ -1,29 +1,28 @@
-
 export interface iCharacters {
-  hbar: string;
-  vbar: string;
-  xbar: string;
-  vbar_break: string;
-  vbar_gap: string;
+  hbar: string
+  vbar: string
+  xbar: string
+  vbar_break: string
+  vbar_gap: string
 
-  uarrow: string;
-  rarrow: string;
+  uarrow: string
+  rarrow: string
 
-  ltop: string;
-  mtop: string;
-  rtop: string;
-  lbot: string;
-  rbot: string;
-  mbot: string;
+  ltop: string
+  mtop: string
+  rtop: string
+  lbot: string
+  rbot: string
+  mbot: string
 
-  lbox: string;
-  rbox: string;
+  lbox: string
+  rbox: string
 
-  lcross: string;
-  rcross: string;
+  lcross: string
+  rcross: string
 
-  underbar: string;
-  underline: string;
+  underbar: string
+  underline: string
 }
 
 export abstract class Characters {
@@ -48,7 +47,7 @@ export abstract class Characters {
       rcross: '┤',
       underbar: '┬',
       underline: '─',
-    };
+    }
   }
 
   static ascii(): iCharacters {
@@ -65,13 +64,13 @@ export abstract class Characters {
       rtop: '.',
       lbot: '`',
       mbot: '^',
-      rbot: '\'',
+      rbot: "'",
       lbox: '[',
       rbox: ']',
       lcross: '|',
       rcross: '|',
       underbar: '|',
       underline: '^',
-    };
+    }
   }
 }

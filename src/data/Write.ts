@@ -1,18 +1,18 @@
-import { format } from "../write.js";
-import { ok, Result } from "./Result.js";
+import { format } from '../write.js'
+import { ok, Result } from './Result.js'
 
 export interface Write {
-  write_str(s: string): Result<null, Error>;
+  write_str(s: string): Result<null, Error>
   write_char(c: string): Result<null, Error>
   write_fmt(...args: any[]): Result<null, Error>
 }
 
 class StdoutWriter implements Write {
   write_str(s: string): Result<null, Error> {
-    throw new Error("Function not implemented")
+    throw new Error('Function not implemented')
   }
   write_char(c: string): Result<null, Error> {
-    throw new Error("Function not implemented")
+    throw new Error('Function not implemented')
   }
   write_fmt(...args: any[]): Result<null, Error> {
     process.stdout.write(format(...args))
@@ -22,10 +22,10 @@ class StdoutWriter implements Write {
 
 class StderrWriter implements Write {
   write_str(s: string): Result<null, Error> {
-    throw new Error("Function not implemented")
+    throw new Error('Function not implemented')
   }
   write_char(c: string): Result<null, Error> {
-    throw new Error("Function not implemented")
+    throw new Error('Function not implemented')
   }
   write_fmt(...args: any[]): Result<null, Error> {
     process.stderr.write(format(...args))
@@ -50,7 +50,9 @@ class StringWriter implements Write {
   map(fn: (value: string) => any) {
     return fn(this.unwrap())
   }
-  unwrap() { return this.value.join('') }
+  unwrap() {
+    return this.value.join('')
+  }
 }
 
 export const stdoutWriter = new StdoutWriter()

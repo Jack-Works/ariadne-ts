@@ -1,23 +1,22 @@
-import chalk from 'chalk'
+export type ColorFn = (value: string) => string
 
-const options: any = {enabled: true, level: 2};
-const c = new chalk.Instance(options);
+function ansi(open: string, close: string): ColorFn {
+  return (value) => `\u001B[${open}m${value}\u001B[${close}m`
+}
 
 export const colors = {
-  blue:   c.blue,
-  green:  c.green,
-  red:    c.red,
-  yellow: c.yellow,
+  blue: ansi('34', '39'),
+  green: ansi('32', '39'),
+  red: ansi('31', '39'),
+  yellow: ansi('33', '39'),
 }
 
 export const bgColors = {
-  blue:   c.bgBlue,
-  green:  c.bgGreen,
-  red:    c.bgRed,
-  yellow: c.bgYellow,
+  blue: ansi('44', '49'),
+  green: ansi('42', '49'),
+  red: ansi('41', '49'),
+  yellow: ansi('43', '49'),
 }
-
-export type ColorFn = ((s: string) => string) | chalk.Chalk
 
 export abstract class Color {
   static Fixed = Fixed
@@ -25,5 +24,5 @@ export abstract class Color {
 }
 
 export function Fixed(n: number) {
-  return c.ansi256(n)
+  return ansi(`38;5;${n}`, '39')
 }

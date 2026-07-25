@@ -1,6 +1,5 @@
-
-import { ColorFn, Fixed } from "./Color.js";
-import { clamp, range, wrapping_add_usize } from "../utils/index.js";
+import { ColorFn, Fixed } from './Color.js'
+import { clamp, range, wrapping_add_usize } from '../utils/index.js'
 
 /// A type that can generate distinct 8-bit colors.
 export class ColorGenerator {
@@ -12,7 +11,10 @@ export class ColorGenerator {
   /// Create a new [`ColorGenerator`] with the given pre-chosen state.
   ///
   /// The minimum brightness can be used to control the colour brightness (0.0 - 1.0). The default is 0.5.
-  static from_state(state: [number, number, number], min_brightness: number): ColorGenerator {
+  static from_state(
+    state: [number, number, number],
+    min_brightness: number,
+  ): ColorGenerator {
     return new ColorGenerator(state, clamp(min_brightness, 0.0, 1.0))
   }
 
@@ -28,15 +30,24 @@ export class ColorGenerator {
       const rhs = 40503 * (i * 4 + 1130)
       const c = wrapping_add_usize(this.state[i], rhs)
       const u16 = parseInt(`${c.toString(2).slice(-16)}`, 2)
-      this.state[i] = u16;
+      this.state[i] = u16
     }
 
-    const value = Math.floor(16
-      + ((this.state[2] / 65535.0 * (1.0 - this.min_brightness) + this.min_brightness) * 5.0
-       + (this.state[1] / 65535.0 * (1.0 - this.min_brightness) + this.min_brightness) * 30.0
-       + (this.state[0] / 65535.0 * (1.0 - this.min_brightness) + this.min_brightness) * 180.0) % 256)
+    const value = Math.floor(
+      16 +
+        ((((this.state[2] / 65535.0) * (1.0 - this.min_brightness) +
+          this.min_brightness) *
+          5.0 +
+          ((this.state[1] / 65535.0) * (1.0 - this.min_brightness) +
+            this.min_brightness) *
+            30.0 +
+          ((this.state[0] / 65535.0) * (1.0 - this.min_brightness) +
+            this.min_brightness) *
+            180.0) %
+          256),
+    )
 
-    const colorFn = Fixed(value);
+    const colorFn = Fixed(value)
     out?.push([value, colorFn])
     return colorFn
   }

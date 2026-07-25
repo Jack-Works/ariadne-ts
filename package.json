@@ -1,42 +1,43 @@
 {
-  "name": "ariadne-ts",
-  "version": "0.3.1",
-  "type": "module",
-  "files": [
-    "dist"
-  ],
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+    "name": "@magic-works/ariadne",
+    "version": "0.3.1",
+    "description": "A TypeScript library for generating Rust-style compiler diagnostics",
+    "type": "module",
+    "packageManager": "pnpm@11.17.0",
+    "files": [
+        "dist"
+    ],
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Jack-Works/ariadne-ts.git"
+    },
+    "license": "MIT",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "test": "vitest run",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "changeset": "changeset",
+        "ci:release": "changeset publish"
+    },
+    "devDependencies": {
+        "@changesets/cli": "^2.31.1",
+        "@types/node": "^26.1.1",
+        "prettier": "^3.9.6",
+        "typescript": "^7.0.2",
+        "vitest": "^4.1.10"
     }
-  },
-  "license": "MIT",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist/",
-    "prebundle": "npm run clean",
-    "bundle": "npm run build && npm publish",
-    "example": "sh scripts/run-example.sh",
-    "example:watch": "sh scripts/watch-example.sh",
-    "test": "vitest"
-  },
-  "devDependencies": {
-    "@types/node": "^24.0.10",
-    "@types/string-format": "^2.0.3",
-    "assert": "^2.0.0",
-    "chalk": "^4.1.2",
-    "cross-env": "^7.0.3",
-    "nodemon": "^3.1.10",
-    "process": "^0.11.10",
-    "string-format": "^2.0.0",
-    "tsx": "^4.20.3",
-    "typescript": "~5.8.3",
-    "vite": "^7.0.2",
-    "vitest": "^3.2.4"
-  }
 }

@@ -1,4 +1,3 @@
-
 export abstract class Option<T> {
   abstract map<R>(fn: (val: T) => R): Option<R>
   abstract map_or<R>(d: R, fn: (val: T) => R): R
@@ -11,8 +10,7 @@ export abstract class Option<T> {
   abstract iter(): T[]
   abstract equal(other: Option<T>): boolean
   static from<T>(obj: T | undefined | null): Option<T> {
-    if (obj === undefined || obj === null)
-      return none()
+    if (obj === undefined || obj === null) return none()
     return some(obj)
   }
 }
@@ -48,8 +46,7 @@ class Some<T> implements Option<T> {
     return false
   }
   equal(other: Option<T>): boolean {
-    if (other.is_some())
-      return this.value === other.value
+    if (other.is_some()) return this.value === other.value
     return false
   }
   static is<T>(o: Option<T>): o is Some<T> {
@@ -74,7 +71,7 @@ class None<T> implements Option<T> {
     return []
   }
   unwrap(): T {
-    throw new Error("Unwrapped None")
+    throw new Error('Unwrapped None')
   }
   unwrap_or_else(d: () => T): T {
     return d()
@@ -94,7 +91,7 @@ class None<T> implements Option<T> {
 }
 
 export const some = <T>(value: T): Option<T> => {
-  return new Some<T>(value);
+  return new Some<T>(value)
 }
 
 export const none = <T>(): Option<T> => {

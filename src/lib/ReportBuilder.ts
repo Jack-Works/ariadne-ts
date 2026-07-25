@@ -1,21 +1,21 @@
-import { Option, some } from "../data/Option.js";
-import { Span } from "../data/Span.js";
-import { Config } from "./Config.js";
-import { Label } from "./Label.js";
-import { iReport, Report } from "./Report.js";
-import { ReportKind } from "./ReportKind.js";
+import { Option, some } from '../data/Option.js'
+import { Span } from '../data/Span.js'
+import { Config } from './Config.js'
+import { Label } from './Label.js'
+import { iReport, Report } from './Report.js'
+import { ReportKind } from './ReportKind.js'
 
 /// A type used to build a [`Report`].
 
 export interface iReportBuilder<S extends Span> {
-  kind: ReportKind;
-  code: string;
-  msg: string;
-  note: string;
-  help: string;
-  location: [S['SourceId'] /* ::Owned */, number];
-  labels: Label<S>[];
-  config: Config;
+  kind: ReportKind
+  code: string
+  msg: string
+  note: string
+  help: string
+  location: [S['SourceId'] /* ::Owned */, number]
+  labels: Label<S>[]
+  config: Config
 }
 
 export class ReportBuilder<S extends Span> {
@@ -27,67 +27,67 @@ export class ReportBuilder<S extends Span> {
     private help: Option<string>,
     private location: [S['SourceId'], number],
     private labels: Label<S>[],
-    private config: Config
-  ) { }
+    private config: Config,
+  ) {}
   /// Give this report a numerical code that may be used to more precisely look up the error in documentation.
   with_code(code: number | string): this {
-    this.code = some(code.toString().padStart(2, '0'));
-    return this;
+    this.code = some(code.toString().padStart(2, '0'))
+    return this
   }
 
   /// Set the message of this report.
   set_message(msg: string) {
-    this.msg = some(msg);
+    this.msg = some(msg)
   }
 
   /// Add a message to this report.
   with_message(msg: string): this {
-    this.msg = some(msg);
-    return this;
+    this.msg = some(msg)
+    return this
   }
 
   /// Set the note of this report.
   set_note(note: string) {
-    this.note = some(note);
+    this.note = some(note)
   }
 
   /// Set the note of this report.
   with_note(note: string): this {
-    this.set_note(note);
-    return this;
+    this.set_note(note)
+    return this
   }
 
   /// Set the help message of this report.
   set_help(note: string) {
-    this.help = some(note);
+    this.help = some(note)
   }
 
   /// Set the help message of this report.
   with_help(note: string): this {
-    this.set_help(note);
-    return this;
+    this.set_help(note)
+    return this
   }
 
   /// Add a label to the report.
   add_label(label: Label<S>) {
-    this.labels.push(label);
+    this.labels.push(label)
   }
 
   /// Add multiple labels to the report.
   add_labels(labels: Label<S>[]) {
-    this.labels.push(...labels);
+    this.labels.push(...labels)
   }
 
   /// Add a label to the report.
   with_label(label: Label<S>): this {
-    this.add_label(label);
-    return this;
+    this.add_label(label)
+    return this
   }
 
   /// Use the given [`Config`] to determine diagnostic attributes.
   with_config(config: Config): this {
-    this.config = config;
-    return this;
+    this.config = config
+    return this
   }
 
   /// Finish building the [`Report`].
@@ -100,8 +100,8 @@ export class ReportBuilder<S extends Span> {
       this.help,
       this.location,
       this.labels,
-      this.config
-    );
-    return r;
+      this.config,
+    )
+    return r
   }
 }

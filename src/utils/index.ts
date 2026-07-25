@@ -1,17 +1,17 @@
-import { Option } from '../data/Option.js';
+import { Option } from '../data/Option.js'
 
 export { binary_search_by_key } from './binary_search_by_key.js'
 
 export function range(start: number, end: number) {
-  let rv = [];
+  let rv = []
   while (start < end) {
-    rv.push(start);
-    start++;
+    rv.push(start)
+    start++
   }
-  return rv;
+  return rv
 }
 
-export function *rangeIter(start: number, end: number) {
+export function* rangeIter(start: number, end: number) {
   while (start < end) {
     yield start
     start++
@@ -25,21 +25,21 @@ export function clamp(value: number, min: number, max: number): number {
 
 export function wrapping_add_usize(lhs: number, rhs: number): number {
   // NOTE: this seems to work but is definitely wrong
-  return (lhs + rhs)
+  return lhs + rhs
 }
 
 export const max = (self: number[]) => {
   if (self.length === 0) return undefined
-  return Math.max.apply(null, self);
-};
+  return Math.max.apply(null, self)
+}
 
 export const min = (self: number[]) => {
   if (self.length === 0) return undefined
-  return Math.min.apply(null, self);
-};
+  return Math.min.apply(null, self)
+}
 
 // convert a boolean to an integer value
-export const bton = (b: boolean): number => b === true ? 1 : 0
+export const bton = (b: boolean): number => (b === true ? 1 : 0)
 
 export function sort_by_key<T>(arr: T[], fn: (a: T) => number | string): void {
   arr.sort((a, b) => {
@@ -57,9 +57,9 @@ export function min_by_key<T>(arr: T[], fn: (value: T) => number): Option<T> {
   return Option.from(res[1])
 }
 
-export const isString = (o: any): o is string => typeof o === "string"
-export const isNumber = (o: any): o is number => typeof o === "number"
-export const isBoolean = (o: any): o is boolean => typeof o === "boolean"
+export const isString = (o: any): o is string => typeof o === 'string'
+export const isNumber = (o: any): o is number => typeof o === 'number'
+export const isBoolean = (o: any): o is boolean => typeof o === 'boolean'
 
 export const isCallback = (
   maybeFunction: true | ((...args: any[]) => void),
@@ -69,7 +69,7 @@ export const isCallback = (
 export function toCamelCase(str: string) {
   return str
     .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
-      return index === 0 ? word.toLowerCase() : word.toUpperCase();
+      return index === 0 ? word.toLowerCase() : word.toUpperCase()
     })
-    .replace(/\s+/g, "");
+    .replace(/\s+/g, '')
 }

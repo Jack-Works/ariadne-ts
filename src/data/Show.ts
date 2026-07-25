@@ -1,42 +1,39 @@
-
-import { Formatter } from "./Formatter.js";
-import { isOption } from "./Option.js";
-import { isResult } from "./Result.js";
-import { isCallback, range } from "../utils/index.js";
-import { write } from "../write.js";
+import { Formatter } from './Formatter.js'
+import { isOption } from './Option.js'
+import { isResult } from './Result.js'
+import { isCallback, range } from '../utils/index.js'
+import { write } from '../write.js'
 
 export class Show {
   constructor(public self: any) {}
   fmt(f: Formatter): void {
-
     if (isOption<string>(this.self)) {
-      this.self.map(x => new Show(x).fmt(f))
+      this.self.map((x) => new Show(x).fmt(f))
       return
     }
     if (isResult(this.self)) {
-      this.self.map(x => new Show(x).fmt(f))
+      this.self.map((x) => new Show(x).fmt(f))
       return
     }
-    if (typeof this.self === "string") {
-      write(f.buf, "{}", this.self)
+    if (typeof this.self === 'string') {
+      write(f.buf, '{}', this.self)
       return
     }
     // TODO: this is all probably wrong
     if (Array.isArray(this.self) && this.self.length === 2) {
       if (isCallback(this.self[1])) {
         for (let x of this.self[0]) {
-          const func = this.self[1];
+          const func = this.self[1]
           func(f, x)
         }
       } else {
         for (let _ of range(0, this.self[1])) {
-          write(f.buf, "{}", this.self[0])
+          write(f.buf, '{}', this.self[0])
         }
       }
-    }
-    else {
-      const x = this.self[0];
-      write(f.buf, "{}", x)
+    } else {
+      const x = this.self[0]
+      write(f.buf, '{}', x)
       return
     }
   }
