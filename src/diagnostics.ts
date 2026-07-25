@@ -107,7 +107,7 @@ export function createDiagnostic(options: {
   } = options
 
   let report = Report.build(mkReportKind(type), filename, offset ?? 0)
-    .with_code(code ?? -1)
+    .with_diag_code(code ?? -1)
     .with_message(mkText(message))
 
   labels.forEach((label) => {

@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
-  Color,
   Config,
+  defaultHTMLTextColorScheme,
   Label,
   Range,
   Report,
   ReportKind,
+  RichText,
   Source,
   renderAnsi,
   renderHtml,
   renderPlain,
+  semanticTokenModifiers,
+  semanticTokenTypes,
 } from '../src/index.js'
 
 function render(
@@ -22,7 +25,7 @@ function render(
   const filename = 'example.ts'
   const report = configure(
     Report.build(ReportKind.Error, filename, 0)
-      .with_code(1)
+      .with_diag_code(1)
       .with_message('Invalid expression'),
   )
     .with_config(Config.default().with_color(color))
@@ -48,19 +51,114 @@ describe('Report', () => {
   })
 
   it('serializes layout IR and renders every backend', async () => {
-    const filename = 'example.ts'
-    const source = 'const answer = false\n'
-    const report = Report.build(ReportKind.Error, filename, 0)
-      .with_code(1)
-      .with_message('Invalid expression')
-      .with_label(
-        Label.from([filename, Range.new(15, 20)])
-          .with_message('Expected a number')
-          .with_color(Color.Named.blue),
-      )
-      .finish()
-    const ir = report.toIR([filename, Source.from(source)], { maxWidth: 80 })
+    const filename = 'sample.tao'
+    const source = `def five = match () in {
+    () => 5,
+    () => "5",
+}
 
+def six =
+    five
+    + 1`
+    const numberStart = source.indexOf('5,')
+    const stringStart = source.indexOf('"5"')
+    const matchStart = source.indexOf('match')
+    const matchEnd = source.indexOf('\n}\n') + 2
+    let fullRequest = ''
+    const report = Report.build(ReportKind.Error, filename, numberStart)
+      .with_diag_code(3)
+      .with_message(
+        RichText.from([
+          'Incompatible types ',
+          {
+            text: '[docs]',
+            link: 'https://example.com/error?code=3',
+            semanticToken: 'text',
+          },
+        ]),
+      )
+      .with_label(
+        Label.from([
+          filename,
+          Range.new(numberStart, numberStart + 1),
+        ]).with_message(
+          RichText.from([
+            'This is of type ',
+            { text: 'Nat', semanticToken: 'type' },
+          ]),
+        ),
+      )
+      .with_label(
+        Label.from([
+          filename,
+          Range.new(stringStart, stringStart + 3),
+        ]).with_message(
+          RichText.from([
+            'This is of type ',
+            { text: 'Str', semanticToken: 'type' },
+          ]),
+        ),
+      )
+      .with_label(
+        Label.from([filename, Range.new(matchStart, matchEnd)]).with_message(
+          RichText.from([
+            'The values are outputs of this match expression.\n',
+            'Call stack:\n',
+            '    ',
+            {
+              text: 'sample.tao:2:11',
+              link: 'https://example.com/source/sample.tao#L2',
+              semanticToken: 'string',
+            },
+            '\n    <main>',
+          ]),
+        ),
+      )
+      .with_note('Outputs of match expressions must coerce to the same type')
+      .with_location_display((displayFilename, line, column) =>
+        RichText.from([
+          {
+            text: displayFilename + `:${line}:${column}`,
+            link: `https://example.com/source/${displayFilename}#L${line ?? 1}`,
+            semanticToken: 'string',
+          },
+        ]),
+      )
+      .with_semantic_token_capability()
+      .with_semantic_token_full((requestedFilename) => {
+        fullRequest = requestedFilename
+        // prettier-ignore
+        return [
+          0, 0, 3, 15, 0,   // def
+          0, 4, 4, 8, 1,    // five
+          0, 7, 5, 15, 0,   // match
+          0, 9, 2, 15, 0,   // in
+          1, 10, 1, 19, 0,  // 5
+          1, 10, 3, 18, 0,  // "5"
+        ]
+      })
+      .finish()
+    const ir = report.toIR([filename, Source.from(source)], { maxWidth: 100 })
+
+    expect(fullRequest).toBe(filename)
+    expect({
+      semanticTokenTypes,
+      semanticTokenModifiers,
+    }).toMatchSnapshot('LSP semantic token defaults')
+    expect(defaultHTMLTextColorScheme.ansi256).toHaveLength(256)
+    expect(ir.spans.filter((span) => span.link !== undefined).length).toBe(3)
+    const sourceTokens = ir.spans.filter(
+      (span) => span.semanticToken !== undefined,
+    )
+    expect(sourceTokens.length).toBeGreaterThan(0)
+    expect(
+      sourceTokens.find((span) => span.text === 'def')?.semanticToken
+        ?.tokenModifiers,
+    ).toContain('unquoted')
+    expect(
+      sourceTokens.find((span) => span.text === 'match')?.semanticToken
+        ?.tokenModifiers,
+    ).not.toContain('unquoted')
     expect(JSON.parse(JSON.stringify(ir))).toEqual(ir)
     expect(ir).toMatchSnapshot('IR')
     expect(renderPlain(ir)).toMatchSnapshot('plain')
@@ -68,6 +166,42 @@ describe('Report', () => {
     await expect(renderHtml(ir)).toMatchFileSnapshot(
       './__snapshots__/report.html',
     )
+  })
+
+  it('requests ranged semantic tokens for the laid out lines', () => {
+    const filename = 'example.ts'
+    const source = 'skip\nconst value = 1\nskip\n'
+    const lineStart = source.indexOf('const')
+    const lineEnd = lineStart + 'const value = 1'.length
+    let requestedRange: [string, number, number] | undefined
+    const report = Report.build(ReportKind.Error, filename, lineStart)
+      .with_message('Invalid declaration')
+      .with_label(
+        Label.from([filename, Range.new(lineStart, lineEnd)]).with_message(
+          'This declaration is invalid',
+        ),
+      )
+      .with_semantic_token_capability({
+        tokenTypes: ['keyword', 'variable', 'number'],
+        tokenModifiers: [],
+      })
+      .with_semantic_token_ranged((requestedFilename, startLine, endLine) => {
+        requestedRange = [requestedFilename, startLine, endLine]
+        // prettier-ignore
+        return [
+          1, 0, 5, 0, 0, // const
+          0, 6, 5, 1, 0, // value
+          0, 8, 1, 2, 0, // 1
+        ]
+      })
+      .finish()
+
+    const ir = report.toIR([filename, Source.from(source)], { maxWidth: 80 })
+
+    expect(requestedRange).toEqual([filename, 1, 2])
+    expect(
+      ir.spans.filter((span) => span.semanticToken !== undefined),
+    ).toMatchSnapshot()
   })
 
   it('renders a multiline label and note', () => {
@@ -78,7 +212,7 @@ describe('Report', () => {
       report
         .with_label(
           Label.from(['example.ts', Range.new(14, 43)]).with_message(
-            'Fields use incompatible types',
+            'Fields use incompatible types\nCompare left and right values',
           ),
         )
         .with_label(

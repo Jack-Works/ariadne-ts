@@ -14,6 +14,7 @@ exports[`Report > renders a multiline label and note 1`] = `
  4 │ ├─▶ }
    · │       
    · ╰─────── Fields use incompatible types
+   ·          Compare left and right values
    ·     
    ·     Note: Object fields must agree
 ───╯
@@ -31,30 +32,79 @@ exports[`Report > renders an inline label 1`] = `
 "
 `;
 
+exports[`Report > requests ranged semantic tokens for the laid out lines 1`] = `
+[
+  {
+    "semanticToken": {
+      "tokenModifiers": [],
+      "tokenType": "keyword",
+    },
+    "text": "const",
+  },
+  {
+    "semanticToken": {
+      "tokenModifiers": [],
+      "tokenType": "variable",
+    },
+    "text": "value",
+  },
+  {
+    "semanticToken": {
+      "tokenModifiers": [],
+      "tokenType": "number",
+    },
+    "text": "1",
+  },
+]
+`;
+
 exports[`Report > serializes layout IR and renders every backend > ANSI 1`] = `
-"[31m[E01] Error:[39m Invalid expression
-   [38;5;246m╭─[[39mexample.ts:1:1[38;5;246m][39m
+"[31m[E03] Error:[39m Incompatible types ]8;;https://example.com/error?code=3\\[38;5;252m[docs][39m]8;;\\
+   [38;5;246m╭─[[39m]8;;https://example.com/source/sample.tao#L2\\[38;5;173msample.tao:2:11[39m]8;;\\[38;5;246m][39m
    [38;5;246m│[39m
- [38;5;246m1 │[39m [38;5;249mconst answer = [39m[34mfalse[39m
- [38;5;246m  ·[39m                [34m──┬──[39m  
- [38;5;246m  ·[39m                  [34m╰────[39m Expected a number
+ [38;5;246m1 │[39m ╭─▶ [38;5;68m[2mdef[22m[39m[38;5;249m [39m[38;5;153m[2mfive[22m[39m[38;5;249m = [39m[38;5;68mmatch[39m () [38;5;68min[39m {
+ [38;5;246m2 │[39m │       () => [38;5;151m5[39m,
+ [38;5;246m  ·[39m │             ┬  
+ [38;5;246m  ·[39m │             ╰── This is of type [38;5;79mNat[39m
+ [38;5;246m3 │[39m │       () => [38;5;173m"5"[39m,
+ [38;5;246m  ·[39m │             ─┬─  
+ [38;5;246m  ·[39m │              ╰─── This is of type [38;5;79mStr[39m
+ [38;5;246m4 │[39m ├─▶ }
+ [38;5;246m  ·[39m │       
+ [38;5;246m  ·[39m ╰─────── The values are outputs of this match expression.
+ [38;5;246m  ·[39m          Call stack:
+ [38;5;246m  ·[39m              ]8;;https://example.com/source/sample.tao#L2\\[38;5;173msample.tao:2:11[39m]8;;\\
+ [38;5;246m  ·[39m              <main>
+ [38;5;246m  ·[39m     
+ [38;5;246m  ·[39m     [38;5;115mNote[39m: Outputs of match expressions must coerce to the same type
 [38;5;246m───╯[39m
 "
 `;
 
 exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
 {
-  "maxWidth": 80,
+  "maxWidth": 100,
   "spans": [
     {
       "foreground": {
         "kind": "named",
         "name": "red",
       },
-      "text": "[E01] Error:",
+      "text": "[E03] Error:",
     },
     {
-      "text": " Invalid expression
+      "text": " Incompatible types ",
+    },
+    {
+      "link": "https://example.com/error?code=3",
+      "semanticToken": {
+        "tokenModifiers": [],
+        "tokenType": "text",
+      },
+      "text": "[docs]",
+    },
+    {
+      "text": "
    ",
     },
     {
@@ -65,7 +115,12 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "╭─[",
     },
     {
-      "text": "example.ts:1:1",
+      "link": "https://example.com/source/sample.tao#L2",
+      "semanticToken": {
+        "tokenModifiers": [],
+        "tokenType": "string",
+      },
+      "text": "sample.tao:2:11",
     },
     {
       "foreground": {
@@ -97,6 +152,26 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "1 │",
     },
     {
+      "text": " ╭─▶ ",
+    },
+    {
+      "foreground": {
+        "index": 249,
+        "kind": "ansi256",
+      },
+      "semanticToken": {
+        "tokenModifiers": [
+          "unquoted",
+        ],
+        "tokenType": "keyword",
+      },
+      "text": "def",
+    },
+    {
+      "foreground": {
+        "index": 249,
+        "kind": "ansi256",
+      },
       "text": " ",
     },
     {
@@ -104,14 +179,210 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
         "index": 249,
         "kind": "ansi256",
       },
-      "text": "const answer = ",
+      "semanticToken": {
+        "tokenModifiers": [
+          "declaration",
+          "unquoted",
+        ],
+        "tokenType": "variable",
+      },
+      "text": "five",
     },
     {
       "foreground": {
-        "kind": "named",
-        "name": "blue",
+        "index": 249,
+        "kind": "ansi256",
       },
-      "text": "false",
+      "text": " = ",
+    },
+    {
+      "semanticToken": {
+        "tokenModifiers": [],
+        "tokenType": "keyword",
+      },
+      "text": "match",
+    },
+    {
+      "text": " () ",
+    },
+    {
+      "semanticToken": {
+        "tokenModifiers": [],
+        "tokenType": "keyword",
+      },
+      "text": "in",
+    },
+    {
+      "text": " {
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "2 │",
+    },
+    {
+      "text": " │       () => ",
+    },
+    {
+      "semanticToken": {
+        "tokenModifiers": [],
+        "tokenType": "number",
+      },
+      "text": "5",
+    },
+    {
+      "text": ",
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "  ·",
+    },
+    {
+      "text": " │             ┬  
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "  ·",
+    },
+    {
+      "text": " │             ╰── This is of type ",
+    },
+    {
+      "semanticToken": {
+        "tokenModifiers": [],
+        "tokenType": "type",
+      },
+      "text": "Nat",
+    },
+    {
+      "text": "
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "3 │",
+    },
+    {
+      "text": " │       () => ",
+    },
+    {
+      "semanticToken": {
+        "tokenModifiers": [],
+        "tokenType": "string",
+      },
+      "text": ""5"",
+    },
+    {
+      "text": ",
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "  ·",
+    },
+    {
+      "text": " │             ─┬─  
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "  ·",
+    },
+    {
+      "text": " │              ╰─── This is of type ",
+    },
+    {
+      "semanticToken": {
+        "tokenModifiers": [],
+        "tokenType": "type",
+      },
+      "text": "Str",
+    },
+    {
+      "text": "
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "4 │",
+    },
+    {
+      "text": " ├─▶ }
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "  ·",
+    },
+    {
+      "text": " │       
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "  ·",
+    },
+    {
+      "text": " ╰─────── The values are outputs of this match expression.
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "  ·",
+    },
+    {
+      "text": "          Call stack:
+ ",
+    },
+    {
+      "foreground": {
+        "index": 246,
+        "kind": "ansi256",
+      },
+      "text": "  ·",
+    },
+    {
+      "text": "              ",
+    },
+    {
+      "link": "https://example.com/source/sample.tao#L2",
+      "semanticToken": {
+        "tokenModifiers": [],
+        "tokenType": "string",
+      },
+      "text": "sample.tao:2:11",
     },
     {
       "text": "
@@ -125,17 +396,7 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "  ·",
     },
     {
-      "text": "                ",
-    },
-    {
-      "foreground": {
-        "kind": "named",
-        "name": "blue",
-      },
-      "text": "──┬──",
-    },
-    {
-      "text": "  
+      "text": "              <main>
  ",
     },
     {
@@ -146,17 +407,28 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "  ·",
     },
     {
-      "text": "                  ",
+      "text": "     
+ ",
     },
     {
       "foreground": {
-        "kind": "named",
-        "name": "blue",
+        "index": 246,
+        "kind": "ansi256",
       },
-      "text": "╰────",
+      "text": "  ·",
     },
     {
-      "text": " Expected a number
+      "text": "     ",
+    },
+    {
+      "foreground": {
+        "index": 115,
+        "kind": "ansi256",
+      },
+      "text": "Note",
+    },
+    {
+      "text": ": Outputs of match expressions must coerce to the same type
 ",
     },
     {
@@ -175,13 +447,69 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
 }
 `;
 
+exports[`Report > serializes layout IR and renders every backend > LSP semantic token defaults 1`] = `
+{
+  "semanticTokenModifiers": [
+    "declaration",
+    "definition",
+    "readonly",
+    "static",
+    "deprecated",
+    "abstract",
+    "async",
+    "modification",
+    "documentation",
+    "defaultLibrary",
+    "unquoted",
+  ],
+  "semanticTokenTypes": [
+    "namespace",
+    "type",
+    "class",
+    "enum",
+    "interface",
+    "struct",
+    "typeParameter",
+    "parameter",
+    "variable",
+    "property",
+    "enumMember",
+    "event",
+    "function",
+    "method",
+    "macro",
+    "keyword",
+    "modifier",
+    "comment",
+    "string",
+    "number",
+    "regexp",
+    "operator",
+    "decorator",
+    "label",
+  ],
+}
+`;
+
 exports[`Report > serializes layout IR and renders every backend > plain 1`] = `
-"[E01] Error: Invalid expression
-   ╭─[example.ts:1:1]
+"[E03] Error: Incompatible types [docs]
+   ╭─[sample.tao:2:11]
    │
- 1 │ const answer = false
-   ·                ──┬──  
-   ·                  ╰──── Expected a number
+ 1 │ ╭─▶ def five = match () in {
+ 2 │ │       () => 5,
+   · │             ┬  
+   · │             ╰── This is of type Nat
+ 3 │ │       () => "5",
+   · │             ─┬─  
+   · │              ╰─── This is of type Str
+ 4 │ ├─▶ }
+   · │       
+   · ╰─────── The values are outputs of this match expression.
+   ·          Call stack:
+   ·              sample.tao:2:11
+   ·              <main>
+   ·     
+   ·     Note: Outputs of match expressions must coerce to the same type
 ───╯
 "
 `;

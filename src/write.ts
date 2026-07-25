@@ -5,9 +5,10 @@ import { isResult, Result } from './data/Result.js'
 import { Write } from './data/Write.js'
 import { isShow, Show } from './data/Show.js'
 import { DiagnosticSpan } from './ir.js'
+import { RichText } from './rich_text.js'
 
 export type Displayable<T = unknown, E = unknown> =
-  Display | Show | Option<T> | Result<T, E> | string | number
+  Display | RichText | Show | Option<T> | Result<T, E> | string | number
 
 export function write<W extends Write>(w: W, ...args: Displayable[]) {
   w.write(formatSpans(...args))
@@ -40,6 +41,9 @@ function formatSpans(...args: Displayable[]): DiagnosticSpan[] {
 }
 
 function toSpans(value: Displayable): DiagnosticSpan[] {
+  if (value instanceof RichText) {
+    return value.toDiagnosticSpans()
+  }
   if (isDisplay(value)) {
     return [value.toSpan()]
   }

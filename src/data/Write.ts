@@ -11,7 +11,12 @@ class IRWriter implements Write {
     for (const span of spans) {
       if (span.text.length === 0) continue
       const previous = this.spans.at(-1)
-      if (previous && sameColor(previous.foreground, span.foreground)) {
+      if (
+        previous &&
+        sameColor(previous.foreground, span.foreground) &&
+        sameSemanticToken(previous.semanticToken, span.semanticToken) &&
+        previous.link === span.link
+      ) {
         previous.text += span.text
       } else {
         this.spans.push({ ...span })
@@ -30,6 +35,20 @@ class IRWriter implements Write {
   toSpans(): DiagnosticSpan[] {
     return this.spans.map((span) => ({ ...span }))
   }
+}
+
+function sameSemanticToken(
+  left: DiagnosticSpan['semanticToken'],
+  right: DiagnosticSpan['semanticToken'],
+): boolean {
+  if (left === undefined || right === undefined) return left === right
+  return (
+    left.tokenType === right.tokenType &&
+    left.tokenModifiers.length === right.tokenModifiers.length &&
+    left.tokenModifiers.every(
+      (modifier, index) => modifier === right.tokenModifiers[index],
+    )
+  )
 }
 
 function sameColor(

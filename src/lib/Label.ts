@@ -3,11 +3,12 @@ import { none, Option, some } from '../data/Option.js'
 import { SpanInit } from '../data/Span.js'
 import { Range } from '../data/Range.js'
 import { maxNumber, saturatingSub } from '../utils/index.js'
+import { RichText, RichTextInput } from '../rich_text.js'
 
 /// A type that represents a labelled section of source code.
 export interface Label<S extends Range> {
   span: S
-  msg: Option<string>
+  msg: Option<RichText>
   color: Option<ColorValue>
   order: number
   priority: number
@@ -24,8 +25,8 @@ export class Label<S> {
   }
 
   /// Give this label a message.
-  with_message(msg: string): this {
-    this.msg = some(msg)
+  with_message(msg: RichTextInput): this {
+    this.msg = some(RichText.from(msg))
     return this
   }
 

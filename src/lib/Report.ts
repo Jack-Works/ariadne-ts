@@ -27,20 +27,30 @@ import { Label } from './Label.js'
 import { LabelInfo, LabelKind } from './LabelInfo.js'
 import { ReportBuilder } from './ReportBuilder.js'
 import { ReportKind, ReportKindConstructor } from './ReportKind.js'
-import { Cache, CacheInit } from './Source.js'
+import {
+  decodeSemanticTokens,
+  DecodedSemanticToken,
+  SemanticTokenCapability,
+  SemanticTokenProvider,
+} from '../semantic_tokens.js'
+import { Cache, CacheInit, Source } from './Source.js'
 import { SourceGroup } from './SourceGroup.js'
+import { LocationDisplay, RichText } from '../rich_text.js'
 
 /// A type representing a diagnostic that is ready to be rendered.
 export class Report<S extends Span> {
   constructor(
     public kind: ReportKindConstructor,
     public code: Option<string>,
-    public msg: Option<string>,
-    public note: Option<string>,
-    public help: Option<string>,
+    public msg: Option<RichText>,
+    public note: Option<RichText>,
+    public help: Option<RichText>,
     public location: [S['SourceId'], number],
+    public locationDisplay: LocationDisplay | undefined,
     public labels: Label<S>[],
     public config: Config,
+    public semanticTokenCapability?: SemanticTokenCapability,
+    public semanticTokenProvider?: SemanticTokenProvider,
   ) {}
 
   /// Begin building a new [`Report`].
@@ -57,6 +67,7 @@ export class Report<S extends Span> {
       none(),
       none(),
       [src_id ?? '', offset],
+      undefined,
       [],
       Config.default(),
     )
@@ -134,6 +145,47 @@ export class Report<S extends Span> {
     return groups
   }
 
+  private getSemanticTokens(
+    filename: string,
+    source: Source,
+    startLine: number,
+    endLine: number,
+  ): Map<number, DecodedSemanticToken[]> {
+    if (this.semanticTokenProvider === undefined) return new Map()
+    if (this.semanticTokenCapability === undefined) {
+      throw new Error(
+        'semantic token capability must be configured before a provider',
+      )
+    }
+
+    const data =
+      this.semanticTokenProvider.kind === 'ranged'
+        ? this.semanticTokenProvider.provide(filename, startLine, endLine)
+        : this.semanticTokenProvider.provide(filename)
+    const tokens = decodeSemanticTokens(
+      data,
+      this.semanticTokenCapability,
+    ).filter((token) => token.line >= startLine && token.line < endLine)
+    const byLine = new Map<number, DecodedSemanticToken[]>()
+
+    for (const token of tokens) {
+      const line = source.line(token.line)
+      if (line.is_none()) {
+        throw new Error(`semantic token line ${token.line} is out of bounds`)
+      }
+      if (token.start + token.length > line.unwrap().chars().length) {
+        throw new Error(
+          `semantic token at ${token.line}:${token.start} is out of bounds`,
+        )
+      }
+      const lineTokens = byLine.get(token.line) ?? []
+      lineTokens.push(token)
+      byLine.set(token.line, lineTokens)
+    }
+
+    return byLine
+  }
+
   /// Render this diagnostic into an internal string buffer.
   private write<C extends Cache<string>, W extends Write>(
     cache: C,
@@ -146,7 +198,7 @@ export class Report<S extends Span> {
 
     // --- Header ---
 
-    let code = this.code ? format('[E{}] ', this.code) : ''
+    const code = this.code.map_or('', (value) => format('[E{}] ', value))
     let id = format('{}{}:', code, this.kind.name)
     const kind_color =
       this.kind === ReportKind.Error
@@ -213,6 +265,12 @@ export class Report<S extends Span> {
       let src = res.unwrap()
 
       let line_range = src.get_line_range(span)
+      const semanticTokens = this.getSemanticTokens(
+        src_id,
+        src,
+        line_range.start,
+        line_range.end,
+      )
 
       // File name & reference
       let location =
@@ -222,21 +280,26 @@ export class Report<S extends Span> {
 
       let [line_no, col_no] = src
         .get_offset_line(location)
-        .map(([_, idx, col]) => [format('{}', idx + 1), format('{}', col + 1)])
-        .unwrap_or_else(() => ['?', '?'])
+        .map<[number | null, number | null]>(([_, idx, col]) => [
+          idx + 1,
+          col + 1,
+        ])
+        .unwrap_or_else(() => [null, null])
 
-      let line_ref = format(':{}:{}', line_no, col_no)
+      const displayedLocation = RichText.from(
+        this.locationDisplay?.(src_name, line_no, col_no) ??
+          `${src_name}:${line_no ?? '?'}:${col_no ?? '?'}`,
+      )
       writeln(
         w,
-        '{}{}{}{}{}{}{}',
+        '{}{}{}{}{}{}',
         new Show([' ', line_no_width + 2]),
         new Display(group_idx === 0 ? draw.ltop : draw.lcross).fg(
           this.config.margin_color(),
         ),
         new Display(draw.hbar).fg(this.config.margin_color()),
         new Display(draw.lbox).fg(this.config.margin_color()),
-        src_name,
-        line_ref,
+        displayedLocation,
         new Display(draw.rbox).fg(this.config.margin_color()),
       )
 
@@ -675,14 +738,35 @@ export class Report<S extends Span> {
 
         // Line
         if (!is_ellipsis) {
-          for (let [col, _c] of [...line.chars()].entries()) {
+          const lineSemanticTokens = semanticTokens.get(idx) ?? []
+          for (let [col, _c] of line.chars().split('').entries()) {
             let highlight = get_highlight(col)
             let color = highlight.is_some()
               ? highlight.unwrap().color
               : this.config.unimportant_color()
             let [c, width] = this.config.char_width(_c, col)
+            const semanticToken = lineSemanticTokens.find(
+              (token) => col >= token.start && col < token.start + token.length,
+            )
+            const renderedSemanticToken =
+              semanticToken === undefined
+                ? undefined
+                : {
+                    tokenType: semanticToken.tokenType,
+                    tokenModifiers:
+                      highlight.is_none() &&
+                      !semanticToken.tokenModifiers.includes('unquoted')
+                        ? [...semanticToken.tokenModifiers, 'unquoted']
+                        : semanticToken.tokenModifiers,
+                  }
             for (let _ of range(0, width)) {
-              write(w, '{}', new Display(c).fg(color))
+              write(
+                w,
+                '{}',
+                new Display(c)
+                  .fg(color)
+                  .withSemanticToken(renderedSemanticToken),
+              )
             }
           }
         }
@@ -873,7 +957,29 @@ export class Report<S extends Span> {
             }
           }
           if (line_label.draw_msg) {
-            write(w, ' {}', new Show(line_label.label.msg))
+            const messageLines = line_label.label.msg
+              .map((message) => message.lines())
+              .unwrap_or_else(() => [])
+            for (const [
+              messageLineIndex,
+              messageLine,
+            ] of messageLines.entries()) {
+              if (messageLineIndex > 0) {
+                write(w, '\n')
+                write_margin(
+                  w,
+                  idx,
+                  false,
+                  is_ellipsis,
+                  true,
+                  none(),
+                  line_labels,
+                  margin_label,
+                )
+                write(w, '{}', new Show([' ', arrow_len]))
+              }
+              write(w, ' {}', messageLine)
+            }
           }
 
           write(w, '\n')

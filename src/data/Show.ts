@@ -3,6 +3,7 @@ import { isOption } from './Option.js'
 import { isResult } from './Result.js'
 import { isCallback } from '../utils/index.js'
 import { write } from '../write.js'
+import { RichText } from '../rich_text.js'
 
 export class Show {
   constructor(public self: unknown) {}
@@ -16,6 +17,10 @@ export class Show {
       return
     }
     if (typeof this.self === 'string') {
+      write(f.buf, '{}', this.self)
+      return
+    }
+    if (this.self instanceof RichText) {
       write(f.buf, '{}', this.self)
       return
     }

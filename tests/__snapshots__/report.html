@@ -1,8 +1,20 @@
-<pre><span style="color: red">[E01] Error:</span> Invalid expression
-   <span style="color: rgb(148, 148, 148)">╭─[</span>example.ts:1:1<span style="color: rgb(148, 148, 148)">]</span>
-   <span style="color: rgb(148, 148, 148)">│</span>
- <span style="color: rgb(148, 148, 148)">1 │</span> <span style="color: rgb(178, 178, 178)">const answer = </span><span style="color: blue">false</span>
- <span style="color: rgb(148, 148, 148)">  ·</span>                <span style="color: blue">──┬──</span>  
- <span style="color: rgb(148, 148, 148)">  ·</span>                  <span style="color: blue">╰────</span> Expected a number
-<span style="color: rgb(148, 148, 148)">───╯</span>
+<pre style="color-scheme: light dark; color: light-dark(#000000, #d4d4d4)"><span style="color: light-dark(#cd3131, #f44747)">[E03] Error:</span> Incompatible types <a href="https://example.com/error?code=3"><span data-token-type="text" data-token-modifiers="" style="color: light-dark(#000000, #d4d4d4)">[docs]</span></a>
+   <span style="color: #949494">╭─[</span><a href="https://example.com/source/sample.tao#L2"><span data-token-type="string" data-token-modifiers="" style="color: light-dark(#a31515, #ce9178)">sample.tao:2:11</span></a><span style="color: #949494">]</span>
+   <span style="color: #949494">│</span>
+ <span style="color: #949494">1 │</span> ╭─▶ <span data-token-type="keyword" data-token-modifiers="unquoted" style="color: light-dark(#0000ff, #569cd6); opacity: 0.65">def</span><span style="color: #b2b2b2"> </span><span data-token-type="variable" data-token-modifiers="declaration unquoted" style="color: light-dark(#001080, #9cdcfe); opacity: 0.65">five</span><span style="color: #b2b2b2"> = </span><span data-token-type="keyword" data-token-modifiers="" style="color: light-dark(#0000ff, #569cd6)">match</span> () <span data-token-type="keyword" data-token-modifiers="" style="color: light-dark(#0000ff, #569cd6)">in</span> {
+ <span style="color: #949494">2 │</span> │       () =&gt; <span data-token-type="number" data-token-modifiers="" style="color: light-dark(#098658, #b5cea8)">5</span>,
+ <span style="color: #949494">  ·</span> │             ┬  
+ <span style="color: #949494">  ·</span> │             ╰── This is of type <span data-token-type="type" data-token-modifiers="" style="color: light-dark(#267f99, #4ec9b0)">Nat</span>
+ <span style="color: #949494">3 │</span> │       () =&gt; <span data-token-type="string" data-token-modifiers="" style="color: light-dark(#a31515, #ce9178)">"5"</span>,
+ <span style="color: #949494">  ·</span> │             ─┬─  
+ <span style="color: #949494">  ·</span> │              ╰─── This is of type <span data-token-type="type" data-token-modifiers="" style="color: light-dark(#267f99, #4ec9b0)">Str</span>
+ <span style="color: #949494">4 │</span> ├─▶ }
+ <span style="color: #949494">  ·</span> │       
+ <span style="color: #949494">  ·</span> ╰─────── The values are outputs of this match expression.
+ <span style="color: #949494">  ·</span>          Call stack:
+ <span style="color: #949494">  ·</span>              <a href="https://example.com/source/sample.tao#L2"><span data-token-type="string" data-token-modifiers="" style="color: light-dark(#a31515, #ce9178)">sample.tao:2:11</span></a>
+ <span style="color: #949494">  ·</span>              &lt;main&gt;
+ <span style="color: #949494">  ·</span>     
+ <span style="color: #949494">  ·</span>     <span style="color: #87d7af">Note</span>: Outputs of match expressions must coerce to the same type
+<span style="color: #949494">───╯</span>
 </pre>
