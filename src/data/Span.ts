@@ -2,7 +2,7 @@ import { isNumber, isString, range, saturatingSub } from '../utils/index.js'
 import { Range } from './Range.js'
 
 export type SpanInit =
-  { src: string; range: Range } | { start: number; end: number }
+  { sourceId: string; range: Range } | { start: number; end: number }
 
 export class Span {
   constructor(
@@ -10,11 +10,11 @@ export class Span {
     private _end: number,
   ) {}
   /// The identifier used to uniquely refer to a source. In most cases, this is the fully-qualified path of the file.
-  public SourceId = ''
+  public sourceId = ''
 
   /// Get the identifier of the source that this span refers to.
   source() {
-    return this.SourceId
+    return this.sourceId
   }
 
   set start(value: number) {
@@ -50,9 +50,9 @@ export class Span {
       return new Span(o.start, o.end)
     }
 
-    if ('src' in o && isString(o.src) && Range.is(o.range)) {
+    if ('sourceId' in o && isString(o.sourceId) && Range.is(o.range)) {
       const s = new Span(o.range.start, o.range.end)
-      s.SourceId = o.src
+      s.sourceId = o.sourceId
       return s
     }
 

@@ -4,6 +4,7 @@ import { SemanticToken } from './semantic_tokens.js'
 export interface DiagnosticSpan {
   text: string
   foreground?: ColorValue
+  background?: ColorValue
   semanticToken?: SemanticToken
   link?: string
 }
@@ -390,6 +391,14 @@ function ansiOpen(color: ColorValue): string {
   return `\u001B[${code}m`
 }
 
+function ansiBackgroundOpen(color: ColorValue): string {
+  const code =
+    color.kind === 'named'
+      ? namedAnsiCodes[color.name] + 10
+      : `48;5;${color.index}`
+  return `\u001B[${code}m`
+}
+
 function ansiLink(link: string | undefined, content: string): string {
   if (link === undefined) return content
   const target = link.replaceAll(/[\u001B\u0007]/g, '')
@@ -474,10 +483,13 @@ export class ANSI_IR_Render extends IR_Render {
   }
 
   protected render_text(span: DiagnosticSpan): string {
-    const text =
-      span.foreground === undefined
-        ? span.text
-        : `${ansiOpen(span.foreground)}${span.text}\u001B[39m`
+    const foreground =
+      span.foreground === undefined ? '' : ansiOpen(span.foreground)
+    const background =
+      span.background === undefined ? '' : ansiBackgroundOpen(span.background)
+    const resetForeground = span.foreground === undefined ? '' : '\u001B[39m'
+    const resetBackground = span.background === undefined ? '' : '\u001B[49m'
+    const text = `${foreground}${background}${span.text}${resetForeground}${resetBackground}`
     return ansiLink(span.link, text)
   }
 
@@ -489,7 +501,10 @@ export class ANSI_IR_Render extends IR_Render {
       this.colorScheme.tokenModifiers,
     )
     const dim = token.tokenModifiers.includes('unquoted')
-    const text = `${ansiOpen(color)}${dim ? '\u001B[2m' : ''}${span.text}${dim ? '\u001B[22m' : ''}\u001B[39m`
+    const background =
+      span.background === undefined ? '' : ansiBackgroundOpen(span.background)
+    const resetBackground = span.background === undefined ? '' : '\u001B[49m'
+    const text = `${ansiOpen(color)}${background}${dim ? '\u001B[2m' : ''}${span.text}${dim ? '\u001B[22m' : ''}\u001B[39m${resetBackground}`
     return ansiLink(span.link, text)
   }
 }
@@ -504,11 +519,28 @@ export class HTML_IR_Render extends IR_Render {
 
   protected render_text(span: DiagnosticSpan): string {
     const text = escapeHtml(span.text)
-    if (span.foreground === undefined) return htmlLink(span.link, text)
-    const color = htmlTextColor(span.foreground, this.textColorScheme)
+    if (span.foreground === undefined && span.background === undefined) {
+      return htmlLink(span.link, text)
+    }
+    const styles = [
+      ...(span.foreground === undefined
+        ? []
+        : [
+            `color: ${escapeHtmlAttribute(
+              htmlTextColor(span.foreground, this.textColorScheme),
+            )}`,
+          ]),
+      ...(span.background === undefined
+        ? []
+        : [
+            `background-color: ${escapeHtmlAttribute(
+              htmlTextColor(span.background, this.textColorScheme),
+            )}`,
+          ]),
+    ]
     return htmlLink(
       span.link,
-      `<span style="color: ${escapeHtmlAttribute(color)}">${text}</span>`,
+      `<span style="${styles.join('; ')}">${text}</span>`,
     )
   }
 
@@ -524,9 +556,15 @@ export class HTML_IR_Render extends IR_Render {
     const opacity = token.tokenModifiers.includes('unquoted')
       ? '; opacity: 0.65'
       : ''
+    const background =
+      span.background === undefined
+        ? ''
+        : `; background-color: ${escapeHtmlAttribute(
+            htmlTextColor(span.background, this.textColorScheme),
+          )}`
     return htmlLink(
       span.link,
-      `<span data-token-type="${tokenType}" data-token-modifiers="${tokenModifiers}" style="color: ${escapeHtmlAttribute(color)}${opacity}">${escapeHtml(span.text)}</span>`,
+      `<span data-token-type="${tokenType}" data-token-modifiers="${tokenModifiers}" style="color: ${escapeHtmlAttribute(color)}${background}${opacity}">${escapeHtml(span.text)}</span>`,
     )
   }
 

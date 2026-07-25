@@ -10,15 +10,11 @@ A TypeScript library for generating beautiful, Rust-style compiler diagnostics.
 
 `@magic-works/ariadne` helps you create elegant, informative, and context-aware error reports for compilers, linters, static analyzers, or any other tool that needs to report errors in source code.
 
-![Ariadne-ts Example Output](https://raw.githubusercontent.com/zesterer/ariadne/main/misc/example.png)
-
-_The screenshot above is from the original Rust library, but `@magic-works/ariadne` produces identically-styled text-based output._
+![ariadne-ts Example Output](https://raw.githubusercontent.com/Jack-Works/ariadne-ts/main/example.png)
 
 ## About
 
-This library is a direct port of the excellent Rust crate [`ariadne`](https://github.com/zesterer/ariadne). Ariadne is a powerful tool for generating diagnostics that are easy to read and understand, heavily inspired by the error reporting style of the Rust compiler, `rustc`.
-
-> **Note:** While `ariadne`'s output is designed to look and feel like `rustc`'s, it is a separate, third-party library and not used by the Rust compiler itself. Its goal is to bring that same high-quality developer experience to other language tools.
+This library is a port of the excellent Rust crate [`ariadne`](https://github.com/zesterer/ariadne) with new features. Ariadne is a powerful tool for generating diagnostics that are easy to read and understand, heavily inspired by the error reporting style of the Rust compiler, `rustc`.
 
 ## Features
 
@@ -26,7 +22,7 @@ This library is a direct port of the excellent Rust crate [`ariadne`](https://gi
 - **Custom Colors & Themes:** Full control over the colors used in your reports to match your tool's branding or user preferences.
 - **Complex Pointer Support:** Create clear, non-overlapping annotations for even the most complex and nested code structures.
 - **Informative Notes & Help Text:** Add extra notes and hints to your reports to guide users toward a solution.
-- **Framework-Agnostic:** Pure TypeScript with minimal dependencies, easy to integrate into any project.
+- **Framework-Agnostic:** Pure TypeScript with no dependencies, easy to integrate into any project.
 
 ## Installation
 
@@ -49,8 +45,8 @@ The standard report builder workflow uses these exports:
 | `Label`         | Associates a source range with an optional annotation message and color.                                            |
 | `Range`         | Defines the zero-based, end-exclusive character offsets covered by a label.                                         |
 | `Source`        | Wraps the source string consumed when the report is laid out and rendered.                                          |
-| `SpanInit`      | Names a sourced span as `{ src, range }`, or an offset-only span as `{ start, end }`.                               |
-| `SourceInput`   | Supplies layout and rendering with a named source as `{ id, source }`, a `Source`, or a custom source provider.     |
+| `SpanInit`      | Names a sourced span as `{ sourceId, range }`, or an offset-only span as `{ start, end }`.                          |
+| `SourceInput`   | Supplies layout and rendering with `{ sourceId, source }`, a `Source`, or a custom source provider.                 |
 | `LayoutOptions` | Configures the required maximum output width and optional surrounding context lines.                                |
 | `OutputBackend` | Identifies the `plain`, `ansi`, or `html` output selected by `Report.render`.                                       |
 

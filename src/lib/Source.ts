@@ -12,27 +12,27 @@ import { Displayable, format } from '../write.js'
 
 export type ErrMsg = string
 
-export interface CacheEntry {
-  id: string
+export interface SourceEntry {
+  sourceId: string
   source: Source
 }
 
-export type SourceInput = CacheEntry | Source | FnCache<string>
+export type SourceInput = SourceEntry | Source | FnCache<string>
 
 /// A trait implemented by [`Source`] caches.
 export abstract class Cache<Id> {
   /// Fetch the [`Source`] identified by the given ID, if possible.
-  abstract fetch(id: Id): Result<Source, ErrMsg>
+  abstract fetch(sourceId: Id): Result<Source, ErrMsg>
 
   /// Display the given ID. as a single inline value.
   ///
   /// This function may make use of attributes from the [`Fmt`] trait.
-  abstract display(id: Id): Option<Displayable>
+  abstract display(sourceId: Id): Option<Displayable>
 
   static from(init: SourceInput): Cache<string> {
     if (Source.is(init)) return init
     if (FnCache.is(init)) return init
-    return new IdSource(init.source.lines(), init.source.len(), init)
+    return new IdSource(init)
   }
 }
 
@@ -71,6 +71,7 @@ export class Source implements Cache<string> {
   constructor(
     private _lines: Line[],
     private _len: number,
+    private _text: string,
   ) {}
 
   /// Generate a [`Source`] from the given [`str`].
@@ -90,7 +91,7 @@ export class Source implements Cache<string> {
         return l
       })
 
-    return new Source(lines, offset)
+    return new Source(lines, offset, s)
   }
   /// Get the length of the total number of characters in the source.
   len(): number {
@@ -102,6 +103,9 @@ export class Source implements Cache<string> {
     return this.lines()
       .map((l) => l.chars())
       .join('\n')
+  }
+  text(): string {
+    return this._text
   }
 
   /// Get access to a specific, zero-indexed [`Line`].
@@ -168,20 +172,16 @@ export class Source implements Cache<string> {
 }
 
 export class IdSource extends Source {
-  constructor(
-    _lines: Line[],
-    _len: number,
-    public data: CacheEntry,
-  ) {
-    super(_lines, _len)
+  constructor(public data: SourceEntry) {
+    super(data.source.lines(), data.source.len(), data.source.text())
   }
-  fetch(id: string): Result<Source, ErrMsg> {
-    return id === this.data.id
+  fetch(sourceId: string): Result<Source, ErrMsg> {
+    return sourceId === this.data.sourceId
       ? ok(this.data.source)
-      : err(format("Failed to fetch source '{}'", id))
+      : err(format("Failed to fetch source '{}'", sourceId))
   }
-  display(id: string): Option<Display> {
-    return some(new Display(id))
+  display(sourceId: string): Option<Display> {
+    return some(new Display(sourceId))
   }
 }
 
@@ -189,32 +189,32 @@ export class IdSource extends Source {
 export class FnCache<Id> implements Cache<Id> {
   constructor(
     public sources: Map<Id, Source>,
-    public get: (id: Id) => string,
+    public get: (sourceId: Id) => string,
   ) {}
 
   /// Create a new [`FnCache`] with the given fetch function.
-  static new<Id>(get: (id: Id) => string): FnCache<Id> {
+  static new<Id>(get: (sourceId: Id) => string): FnCache<Id> {
     return new FnCache<Id>(new Map() /* HashMap::default() */, get)
   }
 
   /// Pre-insert a selection of [`Source`]s into this cache.
-  with_sources(sources: [Id, Source][]): this {
+  with_sources(sources: Array<{ sourceId: Id; source: Source }>): this {
     // this.sources.reserve(sources.length);
-    for (let [id, src] of sources) {
-      this.sources.set(id, src)
+    for (const { sourceId, source } of sources) {
+      this.sources.set(sourceId, source)
     }
     return this
   }
-  fetch(id: Id): Result<Source, ErrMsg> {
-    const entry = this.sources.get(id)
+  fetch(sourceId: Id): Result<Source, ErrMsg> {
+    const entry = this.sources.get(sourceId)
     if (entry !== undefined) return ok(entry)
 
-    const source = Source.from(this.get(id))
-    this.sources.set(id, source)
+    const source = Source.from(this.get(sourceId))
+    this.sources.set(sourceId, source)
     return ok(source)
   }
-  display(id: Id): Option<Displayable> {
-    return some(String(id))
+  display(sourceId: Id): Option<Displayable> {
+    return some(String(sourceId))
   }
 
   static is(other: unknown): other is FnCache<string> {
@@ -223,10 +223,16 @@ export class FnCache<Id> implements Cache<Id> {
 }
 
 /// Create a [`Cache`] from a collection of ID/strings, where each corresponds to a [`Source`].
-export function sources<Id extends string, I extends Array<[Id, string]>>(
-  iter: I,
-): FnCache<Id> {
-  return FnCache.new((id: Id) =>
-    format("Failed to fetch source '{}'", id),
-  ).with_sources(iter.map(([id, s]) => [id, Source.from(s)] as [Id, Source]))
+export function sources<
+  Id extends string,
+  I extends Array<{ sourceId: Id; source: string }>,
+>(iter: I): FnCache<Id> {
+  return FnCache.new((sourceId: Id) =>
+    format("Failed to fetch source '{}'", sourceId),
+  ).with_sources(
+    iter.map(({ sourceId, source }) => ({
+      sourceId,
+      source: Source.from(source),
+    })),
+  )
 }

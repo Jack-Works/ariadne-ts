@@ -7,7 +7,7 @@ import {
   Source,
 } from '@magic-works/ariadne'
 
-const filename = 'sample.tao'
+const sourceId = 'sample.tao'
 const source = `def five = match () in {
     () => 5,
     () => "5",
@@ -22,7 +22,7 @@ const stringStart = source.indexOf('"5"')
 const matchStart = source.indexOf('match')
 const matchEnd = source.indexOf('\n}\n') + 2
 
-const output = Report.build(ReportKind.Error, filename, numberStart)
+const output = Report.build(ReportKind.Error, sourceId, numberStart)
   .with_diag_code(3)
   .with_message(
     RichText.from([
@@ -36,7 +36,7 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
   )
   .with_label(
     Label.from({
-      src: filename,
+      sourceId,
       range: Range.new(numberStart, numberStart + 1),
     }).with_message(
       RichText.from([
@@ -47,7 +47,7 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
   )
   .with_label(
     Label.from({
-      src: filename,
+      sourceId,
       range: Range.new(stringStart, stringStart + 3),
     }).with_message(
       RichText.from([
@@ -58,7 +58,7 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
   )
   .with_label(
     Label.from({
-      src: filename,
+      sourceId,
       range: Range.new(matchStart, matchEnd),
     }).with_message(
       RichText.from([
@@ -75,17 +75,17 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
     ),
   )
   .with_note('Outputs of match expressions must coerce to the same type')
-  .with_location_display((filename, line, column) =>
+  .with_location_display((displaySourceId, line, column) =>
     RichText.from([
       {
-        text: filename + `:${line}:${column}`,
-        link: `https://example.com/source/${filename}#L${line ?? 1}`,
+        text: displaySourceId + `:${line}:${column}`,
+        link: `https://example.com/source/${displaySourceId}#L${line ?? 1}`,
         semanticToken: 'string',
       },
     ]),
   )
   .with_semantic_token_capability()
-  .with_semantic_token_full((_filename) => {
+  .with_semantic_token_full((_sourceText) => {
     // prettier-ignore
     return [
       0, 0, 3, 15, 0,   // def
@@ -97,7 +97,7 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
     ]
   })
   .finish()
-  .render({ id: filename, source: Source.from(source) }, 'ansi', {
+  .render({ sourceId, source: Source.from(source) }, 'ansi', {
     maxWidth: 100,
   })
 

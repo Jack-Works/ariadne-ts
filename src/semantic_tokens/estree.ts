@@ -4,19 +4,26 @@ import {
   semanticTokensFromJavaScriptAST,
   VisitorKeys,
 } from './javascript_ast.js'
+import { javascriptLanguage } from './language.js'
 
 export interface JavaScriptASTSemanticTokenImports {
   visitorKeys: VisitorKeys
 }
 
 export function create_semantic_token_from_estree_ast(
-  get_ast: (
-    source_file: string,
+  create_ast: (
+    sourceText: string,
   ) => ESTree.Program | Babel.File | Babel.Program | undefined,
   imports: JavaScriptASTSemanticTokenImports,
-): (filename: string, start_line: number, end_line: number) => number[] {
-  return (filename, startLine, endLine) => {
-    const ast = get_ast(filename)
+): (
+  sourceText: string,
+  language: string,
+  start_line: number,
+  end_line: number,
+) => number[] {
+  return (sourceText, language, startLine, endLine) => {
+    if (javascriptLanguage(language) === undefined) return []
+    const ast = create_ast(sourceText)
     if (ast === undefined) return []
     return semanticTokensFromJavaScriptAST(
       ast,

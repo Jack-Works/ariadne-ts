@@ -45,7 +45,7 @@ export class Report<S extends Span> {
     public msg: Option<RichText>,
     public note: Option<RichText>,
     public help: Option<RichText>,
-    public location: [S['SourceId'], number],
+    public location: [S['sourceId'], number],
     public locationDisplay: LocationDisplay | undefined,
     public labels: Label<S>[],
     public config: Config,
@@ -56,7 +56,7 @@ export class Report<S extends Span> {
   /// Begin building a new [`Report`].
   static build<S extends Span, Id extends string>(
     kind: ReportKind,
-    src_id: Id | null,
+    sourceId: Id | null,
     offset: number,
   ): ReportBuilder<S> {
     // TODO
@@ -66,7 +66,7 @@ export class Report<S extends Span> {
       none(),
       none(),
       none(),
-      [src_id ?? '', offset],
+      [sourceId ?? '', offset],
       undefined,
       [],
       Config.default(),
@@ -85,7 +85,7 @@ export class Report<S extends Span> {
     }
     const cache = Cache.from(init)
     const writer = createIRWriter()
-    this.write(cache, writer, contextLines)
+    this.write(cache, writer, contextLines, options.maxWidth)
     return writer.finish(options.maxWidth)
   }
 
@@ -98,7 +98,7 @@ export class Report<S extends Span> {
     return renderIR(this.toIR(init, options), backend)
   }
 
-  private get_source_groups(cache: Cache<S['SourceId']>): SourceGroup<S>[] {
+  private get_source_groups(cache: Cache<S['sourceId']>): SourceGroup<S>[] {
     let groups: SourceGroup<S>[] = []
     for (let label of this.labels) {
       let src_display = cache.display(label.span.source())
@@ -129,7 +129,7 @@ export class Report<S extends Span> {
       )
 
       const group = groups.find(
-        (g: SourceGroup<S>) => g.src_id === label.span.source(),
+        (g: SourceGroup<S>) => g.sourceId === label.span.source(),
       )
 
       if (group) {
@@ -150,8 +150,8 @@ export class Report<S extends Span> {
   }
 
   private getSemanticTokens(
-    filename: string,
     source: Source,
+    sourceId: string,
     startLine: number,
     endLine: number,
   ): Map<number, DecodedSemanticToken[]> {
@@ -162,10 +162,16 @@ export class Report<S extends Span> {
       )
     }
 
+    const language = sourceLanguage(sourceId)
     const data =
       this.semanticTokenProvider.kind === 'ranged'
-        ? this.semanticTokenProvider.provide(filename, startLine, endLine)
-        : this.semanticTokenProvider.provide(filename)
+        ? this.semanticTokenProvider.provide(
+            source.text(),
+            language,
+            startLine,
+            endLine,
+          )
+        : this.semanticTokenProvider.provide(source.text(), language)
     const tokens = decodeSemanticTokens(
       data,
       this.semanticTokenCapability,
@@ -195,6 +201,7 @@ export class Report<S extends Span> {
     cache: C,
     w: W,
     contextLines: number,
+    maxWidth: number,
   ): void {
     const draw: iCharacters =
       this.config.char_set === CharSet.Unicode
@@ -214,24 +221,37 @@ export class Report<S extends Span> {
             ? this.config.advice_color()
             : none<ColorValue>()
 
-    writeln(w, '{} {}', new Display(id).fg(kind_color), new Show(this.msg))
+    const headerLines = this.msg
+      .map((message) =>
+        this.resolveRichText(message).wrap(
+          Math.max(1, maxWidth - id.length - 1),
+        ),
+      )
+      .unwrap_or_else(() => [RichText.from('')])
+    for (const [index, messageLine] of headerLines.entries()) {
+      if (index === 0) {
+        writeln(w, '{} {}', new Display(id).fg(kind_color), messageLine)
+      } else {
+        writeln(w, '{}{}', new Show([' ', id.length + 1]), messageLine)
+      }
+    }
 
     let groups = this.get_source_groups(cache)
 
     // Line number maximum width
     let filtered_groups = filterMap(
       groups,
-      ({ span, src_id }: SourceGroup<S>) => {
-        let src_name: string = cache
-          .display(src_id)!
+      ({ span, sourceId }: SourceGroup<S>) => {
+        let sourceName: string = cache
+          .display(sourceId)!
           .map((d) => d.toString())
           .unwrap_or_else(() => '<unknown>')
 
-        let res = cache.fetch(src_id)
+        let res = cache.fetch(sourceId)
 
         if (res.is_err()) {
           throw new Error(
-            format('Unable to fetch source {}: {}', src_name, res.unwrap()),
+            format('Unable to fetch source {}: {}', sourceName, res.unwrap()),
           )
         }
         let src = res.unwrap()
@@ -253,17 +273,17 @@ export class Report<S extends Span> {
 
     // --- Source sections ---
     let groups_len = groups.length
-    for (let [group_idx, { src_id, span, labels }] of groups.entries()) {
-      let src_name = cache
-        .display(src_id)
+    for (let [group_idx, { sourceId, span, labels }] of groups.entries()) {
+      let sourceName = cache
+        .display(sourceId)
         .map((d) => d.toString())
         .unwrap_or_else(() => '<unknown>')
 
-      let res = cache.fetch(src_id)
+      let res = cache.fetch(sourceId)
 
       if (res.is_err()) {
         throw new Error(
-          format('Unable to fetch source {}: {}', src_name, res.unwrap()),
+          format('Unable to fetch source {}: {}', sourceName, res.unwrap()),
         )
       }
 
@@ -272,15 +292,15 @@ export class Report<S extends Span> {
       const labelLineRange = src.get_line_range(span)
       let line_range = this.lineRangeWithContext(src, span, contextLines)
       const semanticTokens = this.getSemanticTokens(
-        src_id,
         src,
+        sourceId,
         line_range.start,
         line_range.end,
       )
 
       // File name & reference
       let location =
-        src_id === this.location[0]
+        sourceId === this.location[0]
           ? this.location[1]
           : labels[0].label.span.start
 
@@ -294,8 +314,8 @@ export class Report<S extends Span> {
       const locationLine = line_no === null ? null : line_no - 1
 
       const displayedLocation = RichText.from(
-        this.locationDisplay?.(src_name, line_no, col_no) ??
-          `${src_name}:${line_no ?? '?'}:${col_no ?? '?'}`,
+        this.locationDisplay?.(sourceName, line_no, col_no) ??
+          `${sourceName}:${line_no ?? '?'}:${col_no ?? '?'}`,
       )
       writeln(
         w,
@@ -632,7 +652,10 @@ export class Report<S extends Span> {
           if (label_info.kind === LabelKind.Inline) {
             const col =
               this.config.label_attach === LabelAttach.Start
-                ? label_info.label.span.start
+                ? minNumber(
+                    label_info.label.span.start + 1,
+                    label_info.label.last_offset(),
+                  )
                 : this.config.label_attach === LabelAttach.End
                   ? label_info.label.last_offset()
                   : (label_info.label.span.start + label_info.label.span.end) /
@@ -700,6 +723,10 @@ export class Report<S extends Span> {
               ? line.len()
               : maxNumber(l, saturatingSub(ll.label.span.end, line.offset()))
           }, 0) + arrow_end_space
+        const annotationMarginWidth =
+          line_no_width +
+          4 +
+          (multi_labels.length > 0 ? (multi_labels.length + 1) * 2 : 0)
 
         // Should we draw a vertical bar as part of a label arrow on this line?
         let get_vbar = (col: number, row: number): Option<LineLabel<S>> =>
@@ -801,6 +828,10 @@ export class Report<S extends Span> {
         // Arrows !!!
         for (let row of range(0, line_labels.length)) {
           let line_label = line_labels[row]
+          const messageArrowLength =
+            line_label.draw_msg && line_label.label.msg.is_some()
+              ? Math.min(arrow_len, Math.ceil(line_label.col) + arrow_end_space)
+              : arrow_len
 
           if (!this.config.compact) {
             // Margin alternate
@@ -903,7 +934,7 @@ export class Report<S extends Span> {
           let chars = line.chars()
           let { next } = makeIter(chars)
 
-          for (let col of range(0, arrow_len)) {
+          for (let col of range(0, messageArrowLength)) {
             let n = next()
             let width = n.map_or(1, (c) => this.config.char_width(c, col)[1])
 
@@ -984,7 +1015,14 @@ export class Report<S extends Span> {
           }
           if (line_label.draw_msg) {
             const messageLines = line_label.label.msg
-              .map((message) => message.lines())
+              .map((message) =>
+                this.resolveRichText(message).wrap(
+                  Math.max(
+                    1,
+                    maxWidth - annotationMarginWidth - messageArrowLength - 1,
+                  ),
+                ),
+              )
               .unwrap_or_else(() => [])
             for (const [
               messageLineIndex,
@@ -1002,7 +1040,7 @@ export class Report<S extends Span> {
                   line_labels,
                   margin_label,
                 )
-                write(w, '{}', new Show([' ', arrow_len]))
+                write(w, '{}', new Show([' ', messageArrowLength]))
               }
               write(w, ' {}', messageLine)
             }
@@ -1014,6 +1052,29 @@ export class Report<S extends Span> {
       //#endregion
 
       let is_final_group = group_idx + 1 === groups_len
+      const finalMessageMarginWidth =
+        line_no_width +
+        4 +
+        (multi_labels.length > 0 ? (multi_labels.length + 1) * 2 : 0)
+      const writeFinalMessage = (title: string, message: RichText): void => {
+        const prefixWidth = title.length + 2
+        const lines = this.resolveRichText(message).wrap(
+          Math.max(1, maxWidth - finalMessageMarginWidth - prefixWidth),
+        )
+        for (const [index, messageLine] of lines.entries()) {
+          write_margin(w, 0, false, false, true, some([0, false]), [], none())
+          if (index === 0) {
+            write(
+              w,
+              '{}: {}\n',
+              new Display(title).fg(this.config.note_color()),
+              messageLine,
+            )
+          } else {
+            write(w, '{}{}\n', new Show([' ', prefixWidth]), messageLine)
+          }
+        }
+      }
 
       // Help
       if (this.help.is_some() && is_final_group) {
@@ -1022,13 +1083,7 @@ export class Report<S extends Span> {
           write_margin(w, 0, false, false, true, some([0, false]), [], none())
           write(w, '\n')
         }
-        write_margin(w, 0, false, false, true, some([0, false]), [], none())
-        write(
-          w,
-          '{}: {}\n',
-          new Display('Help').fg(this.config.note_color()),
-          note,
-        )
+        writeFinalMessage('Help', note)
       }
 
       // Note
@@ -1038,13 +1093,7 @@ export class Report<S extends Span> {
           write_margin(w, 0, false, false, true, some([0, false]), [], none())
           write(w, '\n')
         }
-        write_margin(w, 0, false, false, true, some([0, false]), [], none())
-        write(
-          w,
-          '{}: {}\n',
-          new Display('Note').fg(this.config.note_color()),
-          note,
-        )
+        writeFinalMessage('Note', note)
       }
 
       // Tail of report
@@ -1078,12 +1127,17 @@ export class Report<S extends Span> {
         if (!this.config.compact) {
           write(w, '\n')
         }
-        write(
-          w,
-          '{}: {}\n',
-          new Display('Help').fg(this.config.note_color()),
-          note,
-        )
+        const lines = this.resolveRichText(note).wrap(Math.max(1, maxWidth - 6))
+        for (const [index, line] of lines.entries()) {
+          write(
+            w,
+            index === 0 ? '{}: {}\n' : '{}{}\n',
+            index === 0
+              ? new Display('Help').fg(this.config.note_color())
+              : new Show([' ', 6]),
+            line,
+          )
+        }
       }
 
       // Note
@@ -1092,12 +1146,17 @@ export class Report<S extends Span> {
         if (!this.config.compact) {
           write(w, '\n')
         }
-        write(
-          w,
-          '{}: {}\n',
-          new Display('Note').fg(this.config.note_color()),
-          note,
-        )
+        const lines = this.resolveRichText(note).wrap(Math.max(1, maxWidth - 6))
+        for (const [index, line] of lines.entries()) {
+          write(
+            w,
+            index === 0 ? '{}: {}\n' : '{}{}\n',
+            index === 0
+              ? new Display('Note').fg(this.config.note_color())
+              : new Show([' ', 6]),
+            line,
+          )
+        }
       }
     }
   }
@@ -1113,6 +1172,32 @@ export class Report<S extends Span> {
       Math.min(source.lines().length, range.end + contextLines),
     )
   }
+
+  private resolveRichText(message: RichText): RichText {
+    const provider = this.semanticTokenProvider
+    const capability = this.semanticTokenCapability
+    if (provider === undefined || capability === undefined) {
+      return message.resolveDiff(() => [])
+    }
+    return message.resolveDiff((sourceText, language) => {
+      const data =
+        provider.kind === 'ranged'
+          ? provider.provide(
+              sourceText,
+              language,
+              0,
+              sourceText.split('\n').length,
+            )
+          : provider.provide(sourceText, language)
+      return decodeSemanticTokens(data, capability)
+    })
+  }
+}
+
+function sourceLanguage(sourceId: string): string {
+  const filename = sourceId.split(/[\\/]/).at(-1) ?? sourceId
+  const extension = filename.lastIndexOf('.')
+  return extension < 0 ? '' : filename.slice(extension + 1)
 }
 
 function* map<a, b>(a: Iterator<a>, f: (a: a) => b) {

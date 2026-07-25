@@ -14,6 +14,7 @@ class IRWriter implements Write {
       if (
         previous &&
         sameColor(previous.foreground, span.foreground) &&
+        sameColor(previous.background, span.background) &&
         sameSemanticToken(previous.semanticToken, span.semanticToken) &&
         previous.link === span.link
       ) {

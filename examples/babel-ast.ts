@@ -9,7 +9,7 @@ import {
 import { parse } from '@babel/parser'
 import { VISITOR_KEYS } from '@babel/types'
 
-const filename = 'example.js'
+const sourceId = 'example.js'
 const source = `export function main() {
     /** comment */
     throw new Error("hey!")
@@ -18,28 +18,28 @@ const source = `export function main() {
 if (import.meta.main) {
     main()
 }`
-const ast = parse(source, {
-  sourceType: 'module',
-  tokens: true,
-})
 const provideSemanticTokens = create_semantic_token_from_estree_ast(
-  (requestedFilename) => (requestedFilename === filename ? ast : undefined),
+  (sourceText) =>
+    parse(sourceText, {
+      sourceType: 'module',
+      tokens: true,
+    }),
   { visitorKeys: VISITOR_KEYS },
 )
 const functionStart = source.indexOf('export function')
 const functionEnd = source.indexOf('\n}\n') + 2
 const errorStart = source.indexOf('throw')
-const output = Report.build(ReportKind.Error, filename, errorStart)
+const output = Report.build(ReportKind.Error, sourceId, errorStart)
   .with_message('hey!')
   .with_label(
     Label.from({
-      src: filename,
+      sourceId,
       range: Range.new(functionStart, functionEnd),
     }),
   )
   .with_label(
     Label.from({
-      src: filename,
+      sourceId,
       range: Range.new(
         errorStart,
         errorStart + 'throw new Error("hey!")'.length,
@@ -49,7 +49,7 @@ const output = Report.build(ReportKind.Error, filename, errorStart)
   .with_semantic_token_capability()
   .with_semantic_token_ranged(provideSemanticTokens)
   .finish()
-  .render({ id: filename, source: Source.from(source) }, 'ansi', {
+  .render({ sourceId, source: Source.from(source) }, 'ansi', {
     maxWidth: 100,
     contextLines: 4,
   })

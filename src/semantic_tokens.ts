@@ -63,14 +63,15 @@ export type SemanticTokenProvider =
   | {
       kind: 'ranged'
       provide: (
-        filename: string,
+        sourceText: string,
+        language: string,
         start_line: number,
         end_line: number,
       ) => number[]
     }
   | {
       kind: 'full'
-      provide: (filename: string) => number[]
+      provide: (sourceText: string, language: string) => number[]
     }
 
 export function validateSemanticTokenCapability(

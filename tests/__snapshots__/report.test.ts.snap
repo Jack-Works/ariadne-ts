@@ -1,5 +1,191 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Report > colors diff rich text with the semantic token provider > ANSI diff 1`] = `
+"[31mError:[39m Invalid import
+   [38;5;246m╭─[[39mexample.ts:1:1[38;5;246m][39m
+   [38;5;246m│[39m
+ [38;5;246m1 │[39m value
+ [38;5;246m  ·[39m ──┬──  
+ [38;5;246m  ·[39m   ╰─ Suggested fix:
+ [38;5;246m  ·[39m      [48;5;224m- [49m[38;5;68m[48;5;224mimport[39m[49m[48;5;224m [49m[38;5;68m[48;5;217mtype[39m[49m[48;5;217m [49m[48;5;224m{ Option } from 'std';[49m
+ [38;5;246m  ·[39m      [48;5;194m+ [49m[38;5;68m[48;5;194mimport[39m[49m[48;5;194m { Option } from 'std';[49m
+[38;5;246m───╯[39m
+"
+`;
+
+exports[`Report > colors diff rich text with the semantic token provider > plain diff 1`] = `
+"Error: Invalid import
+   ╭─[example.ts:1:1]
+   │
+ 1 │ value
+   · ──┬──  
+   ·   ╰─ Suggested fix:
+   ·      - import type { Option } from 'std';
+   ·      + import { Option } from 'std';
+───╯
+"
+`;
+
+exports[`Report > colors diff rich text with the semantic token provider 1`] = `
+[
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "- ",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "semanticToken": {
+      "tokenModifiers": [],
+      "tokenType": "keyword",
+    },
+    "text": "import",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": " ",
+  },
+  {
+    "background": {
+      "index": 217,
+      "kind": "ansi256",
+    },
+    "semanticToken": {
+      "tokenModifiers": [],
+      "tokenType": "keyword",
+    },
+    "text": "type",
+  },
+  {
+    "background": {
+      "index": 217,
+      "kind": "ansi256",
+    },
+    "text": " ",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "{ Option } from 'std';",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "+ ",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "semanticToken": {
+      "tokenModifiers": [],
+      "tokenType": "keyword",
+    },
+    "text": "import",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": " { Option } from 'std';",
+  },
+]
+`;
+
+exports[`Report > colors diff rich text with the semantic token provider 2`] = `
+[
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "- ",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "semanticToken": {
+      "tokenModifiers": [],
+      "tokenType": "keyword",
+    },
+    "text": "import",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": " ",
+  },
+  {
+    "background": {
+      "index": 217,
+      "kind": "ansi256",
+    },
+    "semanticToken": {
+      "tokenModifiers": [],
+      "tokenType": "keyword",
+    },
+    "text": "type",
+  },
+  {
+    "background": {
+      "index": 217,
+      "kind": "ansi256",
+    },
+    "text": " ",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "{ Option } from 'std';",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "+ ",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "semanticToken": {
+      "tokenModifiers": [],
+      "tokenType": "keyword",
+    },
+    "text": "import",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": " { Option } from 'std';",
+  },
+]
+`;
+
 exports[`Report > keeps context lines inside a multiline label 1`] = `
 "Error: hey!
    ╭─[example.ts:3:3]
@@ -21,14 +207,14 @@ exports[`Report > renders a multiline label and note 1`] = `
  1 │ ╭─▶ const value = {
  2 │ │     left: 1,
    · │           ┬  
-   · │           ╰── This is a number
+   · │           ╰─ This is a number
  3 │ │     right: "1",
    · │            ─┬─  
-   · │             ╰─── This is a string
+   · │             ╰─ This is a string
  4 │ ├─▶ }
    · │       
-   · ╰─────── Fields use incompatible types
-   ·          Compare left and right values
+   · ╰────── Fields use incompatible types
+   ·         Compare left and right values
    ·     
    ·     Note: Object fields must agree
 ───╯
@@ -41,10 +227,16 @@ exports[`Report > renders an inline label 1`] = `
    │
  1 │ const answer = false
    ·                ──┬──  
-   ·                  ╰──── Expected a number
+   ·                  ╰─ Expected a number
 ───╯
 "
 `;
+
+exports[`Report > renders rich text backgrounds > ANSI background 1`] = `"[38;5;68m[48;5;224mimport[39m[49m"`;
+
+exports[`Report > renders rich text backgrounds > HTML background 1`] = `"<pre style="color-scheme: light dark; color: light-dark(#000000, #d4d4d4)"><span data-token-type="keyword" data-token-modifiers="" style="color: light-dark(#0000ff, #569cd6); background-color: #ffd7d7">import</span></pre>"`;
+
+exports[`Report > renders rich text backgrounds > plain background 1`] = `"import"`;
 
 exports[`Report > requests ranged semantic tokens for the laid out lines 1`] = `
 [
@@ -79,16 +271,16 @@ exports[`Report > serializes layout IR and renders every backend > ANSI 1`] = `
  [38;5;246m1 │[39m ╭─▶ [38;5;68m[2mdef[22m[39m[38;5;249m [39m[38;5;153m[2mfive[22m[39m[38;5;249m = [39m[38;5;68mmatch[39m () [38;5;68min[39m {
  [38;5;246m2 │[39m │       () => [38;5;151m5[39m,
  [38;5;246m  ·[39m │             ┬  
- [38;5;246m  ·[39m │             ╰── This is of type [38;5;79mNat[39m
+ [38;5;246m  ·[39m │             ╰─ This is of type [38;5;79mNat[39m
  [38;5;246m3 │[39m │       () => [38;5;173m"5"[39m,
  [38;5;246m  ·[39m │             ─┬─  
- [38;5;246m  ·[39m │              ╰─── This is of type [38;5;79mStr[39m
+ [38;5;246m  ·[39m │              ╰─ This is of type [38;5;79mStr[39m
  [38;5;246m4 │[39m ├─▶ }
  [38;5;246m  ·[39m │       
- [38;5;246m  ·[39m ╰─────── The values are outputs of this match expression.
- [38;5;246m  ·[39m          Call stack:
- [38;5;246m  ·[39m              ]8;;https://example.com/source/sample.tao#L2\\[38;5;173msample.tao:2:11[39m]8;;\\
- [38;5;246m  ·[39m              <main>
+ [38;5;246m  ·[39m ╰───── The values are outputs of this match expression.
+ [38;5;246m  ·[39m        Call stack:
+ [38;5;246m  ·[39m            ]8;;https://example.com/source/sample.tao#L2\\[38;5;173msample.tao:2:11[39m]8;;\\
+ [38;5;246m  ·[39m            <main>
  [38;5;246m  ·[39m     
  [38;5;246m  ·[39m     [38;5;115mNote[39m: Outputs of match expressions must coerce to the same type
 [38;5;246m───╯[39m
@@ -270,7 +462,7 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "  ·",
     },
     {
-      "text": " │             ╰── This is of type ",
+      "text": " │             ╰─ This is of type ",
     },
     {
       "semanticToken": {
@@ -323,7 +515,7 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "  ·",
     },
     {
-      "text": " │              ╰─── This is of type ",
+      "text": " │              ╰─ This is of type ",
     },
     {
       "semanticToken": {
@@ -366,7 +558,7 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "  ·",
     },
     {
-      "text": " ╰─────── The values are outputs of this match expression.
+      "text": " ╰───── The values are outputs of this match expression.
  ",
     },
     {
@@ -377,7 +569,7 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "  ·",
     },
     {
-      "text": "          Call stack:
+      "text": "        Call stack:
  ",
     },
     {
@@ -388,7 +580,7 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "  ·",
     },
     {
-      "text": "              ",
+      "text": "            ",
     },
     {
       "link": "https://example.com/source/sample.tao#L2",
@@ -410,7 +602,7 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
       "text": "  ·",
     },
     {
-      "text": "              <main>
+      "text": "            <main>
  ",
     },
     {
@@ -512,18 +704,73 @@ exports[`Report > serializes layout IR and renders every backend > plain 1`] = `
  1 │ ╭─▶ def five = match () in {
  2 │ │       () => 5,
    · │             ┬  
-   · │             ╰── This is of type Nat
+   · │             ╰─ This is of type Nat
  3 │ │       () => "5",
    · │             ─┬─  
-   · │              ╰─── This is of type Str
+   · │              ╰─ This is of type Str
  4 │ ├─▶ }
    · │       
-   · ╰─────── The values are outputs of this match expression.
-   ·          Call stack:
-   ·              sample.tao:2:11
-   ·              <main>
+   · ╰───── The values are outputs of this match expression.
+   ·        Call stack:
+   ·            sample.tao:2:11
+   ·            <main>
    ·     
    ·     Note: Outputs of match expressions must coerce to the same type
+───╯
+"
+`;
+
+exports[`Report > uses deeper backgrounds for substituted diff text 1`] = `
+[
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "- ",
+  },
+  {
+    "background": {
+      "index": 217,
+      "kind": "ansi256",
+    },
+    "text": "old",
+  },
+  {
+    "text": "
+",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "+ ",
+  },
+  {
+    "background": {
+      "index": 157,
+      "kind": "ansi256",
+    },
+    "text": "new",
+  },
+]
+`;
+
+exports[`Report > wraps annotation text within maxWidth 1`] = `
+"Error: A declaration has an
+       incompatible value
+   ╭─[example.ts:1:1]
+   │
+ 1 │ const value = 1
+   · ─┬─────────  
+   ·  ╰─ This annotation is
+   ·     deliberately long enough to
+   ·     wrap
+   · 
+   · Note: This note also wraps
+   ·       instead of exceeding the
+   ·       layout width
 ───╯
 "
 `;

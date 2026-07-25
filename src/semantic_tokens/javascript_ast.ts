@@ -92,7 +92,13 @@ function classifyLexicalToken(
       ...(isDocumentation ? { tokenModifiers: ['documentation'] } : {}),
     }
   }
-  if (typeName === 'Keyword' || typeof typeInfo?.keyword === 'string') {
+  if (
+    typeName === 'Keyword' ||
+    typeof typeInfo?.keyword === 'string' ||
+    (typeInfo?.label === 'name' &&
+      tokenValue !== undefined &&
+      contextualKeywordValues.has(tokenValue))
+  ) {
     return { ...position, tokenType: 'keyword' }
   }
   if (
@@ -186,6 +192,26 @@ const operatorValues = new Set([
   '&&=',
   '||=',
   '??=',
+])
+
+const contextualKeywordValues = new Set([
+  'as',
+  'assert',
+  'async',
+  'await',
+  'declare',
+  'from',
+  'get',
+  'infer',
+  'is',
+  'keyof',
+  'of',
+  'override',
+  'readonly',
+  'satisfies',
+  'set',
+  'type',
+  'using',
 ])
 
 function isOperator(value: string | undefined): boolean {

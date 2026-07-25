@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   Config,
   defaultHTMLTextColorScheme,
+  Fixed,
   Label,
+  LabelAttach,
   Range,
   Report,
   ReportKind,
@@ -22,26 +24,160 @@ function render(
   ) => ReturnType<typeof Report.build>,
   color = false,
 ): string {
-  const filename = 'example.ts'
+  const sourceId = 'example.ts'
   const report = configure(
-    Report.build(ReportKind.Error, filename, 0)
+    Report.build(ReportKind.Error, sourceId, 0)
       .with_diag_code(1)
       .with_message('Invalid expression'),
   )
     .with_config(Config.default().with_color(color))
     .finish()
 
-  return report.render({ id: filename, source: Source.from(source) }, 'plain', {
+  return report.render({ sourceId, source: Source.from(source) }, 'plain', {
     maxWidth: 80,
   })
 }
 
 describe('Report', () => {
+  it('renders rich text backgrounds', () => {
+    const ir = {
+      version: 1 as const,
+      maxWidth: 80,
+      spans: [
+        {
+          text: 'import',
+          background: Fixed(224),
+          semanticToken: {
+            tokenType: 'keyword',
+            tokenModifiers: [],
+          },
+        },
+      ],
+    }
+
+    expect(renderPlain(ir)).toMatchSnapshot('plain background')
+    expect(renderAnsi(ir)).toMatchSnapshot('ANSI background')
+    expect(renderHtml(ir)).toMatchSnapshot('HTML background')
+  })
+
+  it('colors diff rich text with the semantic token provider', async () => {
+    const sourceId = 'example.ts'
+    const source = 'value\n'
+    const requestedLanguages: string[] = []
+    const report = Report.build(ReportKind.Error, sourceId, 0)
+      .with_message('Invalid import')
+      .with_label(
+        Label.from({
+          sourceId,
+          range: Range.new(0, 'value'.length),
+        }).with_message(
+          RichText.from([
+            'Suggested fix:\n',
+            {
+              diff: 'before',
+              text: "import type { Option } from 'std';",
+              language: 'typescript',
+            },
+            {
+              diff: 'after',
+              text: "import { Option } from 'std';",
+              language: 'typescript',
+            },
+          ]),
+        ),
+      )
+      .with_semantic_token_capability()
+      .with_semantic_token_full((sourceText, language) => {
+        requestedLanguages.push(language)
+        if (!sourceText.startsWith('import')) return []
+        // prettier-ignore
+        return sourceText.startsWith('import type')
+          ? [
+              0, 0, 6, 15, 0, // import
+              0, 7, 4, 15, 0, // type
+            ]
+          : [
+              0, 0, 6, 15, 0, // import
+            ]
+      })
+      .finish()
+
+    const ir = report.toIR(
+      { sourceId, source: Source.from(source) },
+      { maxWidth: 80 },
+    )
+    const diffSpans = ir.spans.filter((span) => span.background !== undefined)
+
+    expect(diffSpans.length).toBeGreaterThan(0)
+    expect(requestedLanguages).toContain('typescript')
+    expect(
+      diffSpans
+        .filter((span) => span.semanticToken?.tokenType === 'keyword')
+        .map((span) => span.text),
+    ).toEqual(['import', 'type', 'import'])
+    expect(renderPlain(ir)).toMatchSnapshot('plain diff')
+    expect(renderAnsi(ir)).toMatchSnapshot('ANSI diff')
+    await expect(renderHtml(ir)).toMatchFileSnapshot(
+      './__snapshots__/report-diff.html',
+    )
+    expect(diffSpans).toMatchSnapshot()
+  })
+
+  it('uses deeper backgrounds for substituted diff text', () => {
+    const resolved = RichText.from([
+      { diff: 'before', text: 'old', language: 'typescript' },
+      { diff: 'after', text: 'new', language: 'typescript' },
+    ]).resolveDiff(() => [])
+
+    expect(
+      resolved.spans.filter(
+        (span) =>
+          span.background?.kind === 'ansi256' &&
+          (span.background.index === 217 || span.background.index === 157),
+      ),
+    ).toEqual([
+      { text: 'old', background: Fixed(217) },
+      { text: 'new', background: Fixed(157) },
+    ])
+    expect(resolved.spans).toMatchSnapshot()
+  })
+
+  it('wraps annotation text within maxWidth', () => {
+    const sourceId = 'example.ts'
+    const source = 'const value = 1\n'
+    const report = Report.build(ReportKind.Error, sourceId, 0)
+      .with_message('A declaration has an incompatible value')
+      .with_label(
+        Label.from({
+          sourceId,
+          range: Range.new(0, 'const value'.length),
+        }).with_message('This annotation is deliberately long enough to wrap'),
+      )
+      .with_note('This note also wraps instead of exceeding the layout width')
+      .with_config(Config.default().with_label_attach(LabelAttach.Start))
+      .finish()
+
+    const output = report.render(
+      { sourceId, source: Source.from(source) },
+      'plain',
+      { maxWidth: 36 },
+    )
+
+    expect(
+      output
+        .trimEnd()
+        .split('\n')
+        .every((line) => line.length <= 36),
+    ).toBe(true)
+    expect(output).toContain('╰─ This annotation')
+    expect(output).toMatchSnapshot()
+  })
+
   it('renders an inline label', () => {
     const output = render('const answer = false\n', (report) =>
       report.with_label(
         Label.from({
-          src: 'example.ts',
+          sourceId: 'example.ts',
           range: Range.new(15, 20),
         }).with_message('Expected a number'),
       ),
@@ -52,7 +188,7 @@ describe('Report', () => {
   })
 
   it('serializes layout IR and renders every backend', async () => {
-    const filename = 'sample.tao'
+    const sourceId = 'sample.tao'
     const source = `def five = match () in {
     () => 5,
     () => "5",
@@ -66,7 +202,7 @@ def six =
     const matchStart = source.indexOf('match')
     const matchEnd = source.indexOf('\n}\n') + 2
     let fullRequest = ''
-    const report = Report.build(ReportKind.Error, filename, numberStart)
+    const report = Report.build(ReportKind.Error, sourceId, numberStart)
       .with_diag_code(3)
       .with_message(
         RichText.from([
@@ -80,7 +216,7 @@ def six =
       )
       .with_label(
         Label.from({
-          src: filename,
+          sourceId,
           range: Range.new(numberStart, numberStart + 1),
         }).with_message(
           RichText.from([
@@ -91,7 +227,7 @@ def six =
       )
       .with_label(
         Label.from({
-          src: filename,
+          sourceId,
           range: Range.new(stringStart, stringStart + 3),
         }).with_message(
           RichText.from([
@@ -102,7 +238,7 @@ def six =
       )
       .with_label(
         Label.from({
-          src: filename,
+          sourceId,
           range: Range.new(matchStart, matchEnd),
         }).with_message(
           RichText.from([
@@ -119,18 +255,18 @@ def six =
         ),
       )
       .with_note('Outputs of match expressions must coerce to the same type')
-      .with_location_display((displayFilename, line, column) =>
+      .with_location_display((displaySourceId, line, column) =>
         RichText.from([
           {
-            text: displayFilename + `:${line}:${column}`,
-            link: `https://example.com/source/${displayFilename}#L${line ?? 1}`,
+            text: displaySourceId + `:${line}:${column}`,
+            link: `https://example.com/source/${displaySourceId}#L${line ?? 1}`,
             semanticToken: 'string',
           },
         ]),
       )
       .with_semantic_token_capability()
-      .with_semantic_token_full((requestedFilename) => {
-        fullRequest = requestedFilename
+      .with_semantic_token_full((requestedSourceText) => {
+        fullRequest = requestedSourceText
         // prettier-ignore
         return [
           0, 0, 3, 15, 0,   // def
@@ -143,11 +279,11 @@ def six =
       })
       .finish()
     const ir = report.toIR(
-      { id: filename, source: Source.from(source) },
+      { sourceId, source: Source.from(source) },
       { maxWidth: 100 },
     )
 
-    expect(fullRequest).toBe(filename)
+    expect(fullRequest).toBe(source)
     expect({
       semanticTokenTypes,
       semanticTokenModifiers,
@@ -176,16 +312,16 @@ def six =
   })
 
   it('requests ranged semantic tokens for the laid out lines', () => {
-    const filename = 'example.ts'
+    const sourceId = 'example.ts'
     const source = 'skip\nconst value = 1\nskip\n'
     const lineStart = source.indexOf('const')
     const lineEnd = lineStart + 'const value = 1'.length
     let requestedRange: [string, number, number] | undefined
-    const report = Report.build(ReportKind.Error, filename, lineStart)
+    const report = Report.build(ReportKind.Error, sourceId, lineStart)
       .with_message('Invalid declaration')
       .with_label(
         Label.from({
-          src: filename,
+          sourceId,
           range: Range.new(lineStart, lineEnd),
         }).with_message('This declaration is invalid'),
       )
@@ -193,26 +329,29 @@ def six =
         tokenTypes: ['keyword', 'variable', 'number'],
         tokenModifiers: [],
       })
-      .with_semantic_token_ranged((requestedFilename, startLine, endLine) => {
-        requestedRange = [requestedFilename, startLine, endLine]
-        // prettier-ignore
-        return [
-          1, 0, 5, 0, 0, // const
-          0, 6, 5, 1, 0, // value
-          0, 8, 1, 2, 0, // 1
-        ]
-      })
+      .with_semantic_token_ranged(
+        (requestedSourceText, language, startLine, endLine) => {
+          expect(language).toBe('ts')
+          requestedRange = [requestedSourceText, startLine, endLine]
+          // prettier-ignore
+          return [
+            1, 0, 5, 0, 0, // const
+            0, 6, 5, 1, 0, // value
+            0, 8, 1, 2, 0, // 1
+          ]
+        },
+      )
       .finish()
 
     const ir = report.toIR(
-      { id: filename, source: Source.from(source) },
+      { sourceId, source: Source.from(source) },
       {
         maxWidth: 80,
         contextLines: 1,
       },
     )
 
-    expect(requestedRange).toEqual([filename, 0, 3])
+    expect(requestedRange).toEqual([source, 0, 3])
     const plain = renderPlain(ir)
     expect(plain).toContain('1 │ skip')
     expect(plain).toContain('3 │ skip')
@@ -222,30 +361,30 @@ def six =
   })
 
   it('keeps context lines inside a multiline label', () => {
-    const filename = 'example.ts'
+    const sourceId = 'example.ts'
     const source = `function main() {
   // context
   throw new Error("hey!")
 }`
     const errorStart = source.indexOf('throw')
-    const report = Report.build(ReportKind.Error, filename, errorStart)
+    const report = Report.build(ReportKind.Error, sourceId, errorStart)
       .with_message('hey!')
       .with_label(
         Label.from({
-          src: filename,
+          sourceId,
           range: Range.new(0, source.length),
         }),
       )
       .with_label(
         Label.from({
-          src: filename,
+          sourceId,
           range: Range.new(errorStart, errorStart + 'throw'.length),
         }),
       )
       .finish()
 
     const output = report.render(
-      { id: filename, source: Source.from(source) },
+      { sourceId, source: Source.from(source) },
       'plain',
       {
         maxWidth: 80,
@@ -268,7 +407,7 @@ def six =
       report
         .with_label(
           Label.from({
-            src: 'example.ts',
+            sourceId: 'example.ts',
             range: Range.new(14, 43),
           }).with_message(
             'Fields use incompatible types\nCompare left and right values',
@@ -276,13 +415,13 @@ def six =
         )
         .with_label(
           Label.from({
-            src: 'example.ts',
+            sourceId: 'example.ts',
             range: Range.new(leftValue, leftValue + 1),
           }).with_message('This is a number'),
         )
         .with_label(
           Label.from({
-            src: 'example.ts',
+            sourceId: 'example.ts',
             range: Range.new(rightValue, rightValue + 3),
           }).with_message('This is a string'),
         )

@@ -2,7 +2,7 @@ import { Span, SpanInit } from './Span.js'
 
 export class Range extends Span {
   public source(): string {
-    return this.SourceId
+    return this.sourceId
   }
 
   public len(): number {
@@ -19,7 +19,7 @@ export class Range extends Span {
   static from(o: SpanInit): Range {
     const span = Span.from(o)
     const range = new Range(span.start, span.end)
-    range.SourceId = span.SourceId
+    range.sourceId = span.sourceId
     return range
   }
 

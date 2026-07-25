@@ -80,7 +80,7 @@ const mkText = (s: string | Fstring) => (isString(s) ? s : makeFstring(s))
 const mkRange = (range: LabelRange) => new Range(range.start, range.end)
 
 export function createDiagnostic(options: {
-  filename: string
+  sourceId: string
   message: string | Fstring
   type: DiagnosticType
   code?: number
@@ -93,7 +93,7 @@ export function createDiagnostic(options: {
   source: string
 }) {
   const {
-    filename,
+    sourceId,
     message,
     code,
     type,
@@ -106,7 +106,7 @@ export function createDiagnostic(options: {
     backend = 'ansi',
   } = options
 
-  let report = Report.build(mkReportKind(type), filename, offset ?? 0)
+  let report = Report.build(mkReportKind(type), sourceId, offset ?? 0)
     .with_diag_code(code ?? -1)
     .with_message(mkText(message))
 
@@ -114,7 +114,7 @@ export function createDiagnostic(options: {
     const { fstring, color, range } = label
 
     const _label = Label.from({
-      src: filename,
+      sourceId,
       range: mkRange(range),
     }).with_message(mkText(fstring))
 
@@ -136,7 +136,7 @@ export function createDiagnostic(options: {
   return report
     .with_config(config)
     .finish()
-    .render({ id: filename, source: Source.from(source) }, backend, {
+    .render({ sourceId, source: Source.from(source) }, backend, {
       maxWidth,
     })
 }

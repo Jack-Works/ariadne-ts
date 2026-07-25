@@ -1,15 +1,26 @@
 import type * as ts from 'typescript'
 import { AbsoluteSemanticToken, encodeSemanticTokens } from './encode.js'
+import { javascriptLanguage } from './language.js'
 
 type TypeScriptImports = typeof import('typescript')
 
 export function create_semantic_token_from_typescript_ast(
-  get_source_file: (source_file: string) => ts.SourceFile | undefined,
   imports: TypeScriptImports,
-): (filename: string, start_line: number, end_line: number) => number[] {
-  return (filename, startLine, endLine) => {
-    const sourceFile = get_source_file(filename)
-    if (sourceFile === undefined) return []
+): (
+  sourceText: string,
+  language: string,
+  start_line: number,
+  end_line: number,
+) => number[] {
+  return (sourceText, language, startLine, endLine) => {
+    const normalizedLanguage = javascriptLanguage(language)
+    if (normalizedLanguage === undefined) return []
+    const sourceFile = imports.createSourceFile(
+      normalizedLanguage === 'typescript' ? 'source.ts' : 'source.js',
+      sourceText,
+      imports.ScriptTarget.Latest,
+      true,
+    )
 
     const tokens: AbsoluteSemanticToken[] = []
     addLexicalTokens(sourceFile, imports, tokens)

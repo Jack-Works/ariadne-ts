@@ -7,6 +7,7 @@ export class Display {
   constructor(value: string | Display) {
     this.value = typeof value === 'string' ? value : value.value
     this.foreground = typeof value === 'string' ? undefined : value.foreground
+    this.background = typeof value === 'string' ? undefined : value.background
     this.semanticToken =
       typeof value === 'string' ? undefined : value.semanticToken
     this.link = typeof value === 'string' ? undefined : value.link
@@ -17,6 +18,10 @@ export class Display {
     } else {
       this.foreground = color
     }
+    return this
+  }
+  bg(color: ColorValue): this {
+    this.background = color
     return this
   }
   withSemanticToken(semanticToken: SemanticToken | undefined): this {
@@ -40,6 +45,7 @@ export class Display {
     return {
       text: this.value,
       ...(this.foreground === undefined ? {} : { foreground: this.foreground }),
+      ...(this.background === undefined ? {} : { background: this.background }),
       ...(this.semanticToken === undefined
         ? {}
         : { semanticToken: this.semanticToken }),
@@ -55,6 +61,7 @@ export class Display {
 
   private value: string
   private foreground: ColorValue | undefined
+  private background: ColorValue | undefined
   private semanticToken: SemanticToken | undefined
   private link: string | undefined
 

@@ -6,7 +6,7 @@ export { Range } from './data/Range.js'
 export { Source } from './lib/Source.js'
 export type { LayoutOptions, OutputBackend } from './ir.js'
 export type { SpanInit } from './data/Span.js'
-export type { SourceInput } from './lib/Source.js'
+export type { SourceEntry, SourceInput } from './lib/Source.js'
 
 // Optional customization, rendering, and integrations
 export { RichText } from './rich_text.js'
@@ -18,6 +18,7 @@ export type {
 } from './rich_text.js'
 export { createDiagnostic } from './diagnostics.js'
 export { Config } from './lib/Config.js'
+export { LabelAttach } from './lib/Config.js'
 export { Color, Fixed } from './lib/Color.js'
 export type { ColorValue } from './lib/Color.js'
 export { ColorGenerator } from './lib/ColorGenerator.js'

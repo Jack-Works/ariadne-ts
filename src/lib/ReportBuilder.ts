@@ -22,7 +22,7 @@ export class ReportBuilder<S extends Span> {
     private msg: Option<RichText>,
     private note: Option<RichText>,
     private help: Option<RichText>,
-    private location: [S['SourceId'], number],
+    private location: [S['sourceId'], number],
     private locationDisplay: LocationDisplay | undefined,
     private labels: Label<S>[],
     private config: Config,
@@ -109,7 +109,8 @@ export class ReportBuilder<S extends Span> {
   /// source line range used by this diagnostic.
   with_semantic_token_ranged(
     provide: (
-      filename: string,
+      sourceText: string,
+      language: string,
       start_line: number,
       end_line: number,
     ) => number[],
@@ -120,7 +121,9 @@ export class ReportBuilder<S extends Span> {
 
   /// Request LSP delta semantic tokens for the complete source file. The first
   /// token is relative to document position (0, 0).
-  with_semantic_token_full(provide: (filename: string) => number[]): this {
+  with_semantic_token_full(
+    provide: (sourceText: string, language: string) => number[],
+  ): this {
     this.semanticTokenProvider = { kind: 'full', provide }
     return this
   }
