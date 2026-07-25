@@ -1,8 +1,10 @@
+/** @internal */
 export interface EditRange {
   start: number
   end: number
 }
 
+/** @internal */
 export interface ShortestEdit {
   before: EditRange[]
   after: EditRange[]
@@ -14,6 +16,7 @@ interface Character {
   end: number
 }
 
+/** @internal */
 export function shortestEdit(before: string, after: string): ShortestEdit {
   const beforeCharacters = characters(before)
   const afterCharacters = characters(after)

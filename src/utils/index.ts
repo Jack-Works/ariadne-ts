@@ -1,7 +1,9 @@
 import { Option } from '../data/Option.js'
 
+/** @internal */
 export { binary_search_by_key } from './binary_search_by_key.js'
 
+/** @internal */
 export function range(start: number, end: number): number[] {
   const rv: number[] = []
   while (start < end) {
@@ -11,6 +13,7 @@ export function range(start: number, end: number): number[] {
   return rv
 }
 
+/** @internal */
 export function* rangeIter(start: number, end: number) {
   while (start < end) {
     yield start
@@ -19,23 +22,28 @@ export function* rangeIter(start: number, end: number) {
   return
 }
 
+/** @internal */
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
+/** @internal */
 export function wrapping_add_usize(lhs: number, rhs: number): number {
   // NOTE: this seems to work but is definitely wrong
   return lhs + rhs
 }
 
+/** @internal */
 export const max = (self: number[]) => {
   if (self.length === 0) return undefined
   return Math.max.apply(null, self)
 }
 
 // convert a boolean to an integer value
+/** @internal */
 export const bton = (b: boolean): number => (b === true ? 1 : 0)
 
+/** @internal */
 export function filterMap<T, R>(
   items: readonly T[],
   fn: (value: T, index: number) => R | null,
@@ -48,18 +56,22 @@ export function filterMap<T, R>(
   return result
 }
 
+/** @internal */
 export function saturatingSub(value: number, amount: number): number {
   return Math.max(0, value - amount)
 }
 
+/** @internal */
 export function maxNumber(value: number, other: number): number {
   return Math.max(value, other)
 }
 
+/** @internal */
 export function minNumber(value: number, other: number): number {
   return Math.min(value, other)
 }
 
+/** @internal */
 export function sort_by_key<T>(arr: T[], fn: (a: T) => number | string): void {
   arr.sort((a, b) => {
     const left = fn(a)
@@ -70,6 +82,7 @@ export function sort_by_key<T>(arr: T[], fn: (a: T) => number | string): void {
   })
 }
 
+/** @internal */
 export function min_by_key<T>(arr: T[], fn: (value: T) => number): Option<T> {
   let res: [number, T | null] = [Infinity, null]
   for (let val of arr) {
@@ -80,10 +93,14 @@ export function min_by_key<T>(arr: T[], fn: (value: T) => number): Option<T> {
   return Option.from(res[1])
 }
 
+/** @internal */
 export const isString = (o: unknown): o is string => typeof o === 'string'
+/** @internal */
 export const isNumber = (o: unknown): o is number => typeof o === 'number'
+/** @internal */
 export const isBoolean = (o: unknown): o is boolean => typeof o === 'boolean'
 
+/** @internal */
 export const isCallback = (
   maybeFunction: unknown,
 ): maybeFunction is (...args: never[]) => unknown =>

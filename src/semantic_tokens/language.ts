@@ -1,5 +1,7 @@
+/** @internal */
 export type JavaScriptLanguage = 'javascript' | 'typescript'
 
+/** @internal */
 export function javascriptLanguage(
   language: string,
 ): JavaScriptLanguage | undefined {

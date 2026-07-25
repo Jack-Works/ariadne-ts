@@ -78,6 +78,7 @@ export type SemanticTokenProvider =
       provide: (sourceText: string, language: string) => number[]
     }
 
+/** @internal */
 export function validateSemanticTokenCapability(
   capability: SemanticTokenCapability,
 ): SemanticTokenCapability {
@@ -105,6 +106,7 @@ export function validateSemanticTokenCapability(
   }
 }
 
+/** @internal */
 export function decodeSemanticTokens(
   data: readonly number[],
   capability: SemanticTokenCapability,

@@ -1,13 +1,10 @@
 import type * as Babel from '@babel/types'
 import type * as ESTree from 'estree'
-import {
-  semanticTokensFromJavaScriptAST,
-  VisitorKeys,
-} from './javascript_ast.js'
+import { semanticTokensFromJavaScriptAST } from './javascript_ast.js'
 import { javascriptLanguage } from './language.js'
 
 export interface JavaScriptASTSemanticTokenImports {
-  visitorKeys: VisitorKeys
+  visitorKeys: Readonly<Record<string, readonly string[]>>
 }
 
 export function create_semantic_token_from_estree_ast(

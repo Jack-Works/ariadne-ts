@@ -186,6 +186,28 @@ describe('Report', () => {
     expect(resolved.spans).toMatchSnapshot()
   })
 
+  it('uses deeper backgrounds for multiline inserted and deleted diff text', () => {
+    const resolved = RichText.from([
+      { diff: 'before', text: 'start\nremoved line\nshared\nend' },
+      { diff: 'after', text: 'start\nshared\ninserted line\nend' },
+    ]).resolveDiff(() => [])
+
+    const changedText = (background: number) =>
+      resolved.spans
+        .filter(
+          (span) =>
+            span.background?.kind === 'ansi256' &&
+            span.background.index === background,
+        )
+        .map((span) => span.text)
+        .join('')
+
+    expect(changedText(217)).toContain('removed line')
+    expect(changedText(157)).toContain('inserted line')
+    expect(changedText(217)).not.toContain('shared')
+    expect(changedText(157)).not.toContain('shared')
+  })
+
   it('wraps annotation text within maxWidth', () => {
     const sourceId = 'example.ts'
     const source = 'const value = 1\n'

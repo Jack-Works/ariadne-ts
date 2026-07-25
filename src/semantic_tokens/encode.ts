@@ -3,6 +3,7 @@ import {
   semanticTokenTypes,
 } from '../semantic_tokens.js'
 
+/** @internal */
 export interface AbsoluteSemanticToken {
   line: number
   start: number
@@ -11,6 +12,7 @@ export interface AbsoluteSemanticToken {
   tokenModifiers?: readonly (typeof semanticTokenModifiers)[number][]
 }
 
+/** @internal */
 export function encodeSemanticTokens(
   tokens: readonly AbsoluteSemanticToken[],
   startLine: number,

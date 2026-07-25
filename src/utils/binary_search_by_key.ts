@@ -1,5 +1,6 @@
 import { err, ok, Result } from '../data/Result.js'
 
+/** @internal */
 export function binary_search_by_key<T>(
   arr: readonly T[],
   x: number,

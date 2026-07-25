@@ -1,5 +1,6 @@
 import { DiagnosticIR, DiagnosticSpan } from '../ir.js'
 
+/** @internal */
 export interface Write {
   write(spans: readonly DiagnosticSpan[]): void
 }
@@ -66,4 +67,5 @@ function sameColor(
   return false
 }
 
+/** @internal */
 export const createIRWriter = () => new IRWriter()

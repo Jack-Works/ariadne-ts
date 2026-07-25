@@ -3,6 +3,7 @@ import { Display } from '../data/Display.js'
 import { Option, some } from '../data/Option.js'
 
 export class Config {
+  /** @internal */
   constructor(
     public cross_gap: boolean,
     public label_attach: LabelAttach,
@@ -86,17 +87,21 @@ export class Config {
     return this
   }
 
+  /** @internal */
   margin_color(): Option<ColorValue> {
     return some(Fixed(246)).filter(() => this.color)
   }
+  /** @internal */
   unimportant_color(): Option<ColorValue> {
     return some(Fixed(249)).filter(() => this.color)
   }
+  /** @internal */
   note_color(): Option<ColorValue> {
     return some(Fixed(115)).filter(() => this.color)
   }
 
   // Find the character that should be drawn and the number of times it should be drawn for each char
+  /** @internal */
   char_width(c: string, col: number): [Display, number] {
     if (c === '\t') {
       // Find the column that the tab should end at

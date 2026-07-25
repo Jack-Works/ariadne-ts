@@ -171,6 +171,7 @@ export class Source implements Cache<string> {
   }
 }
 
+/** @internal */
 export class IdSource extends Source {
   constructor(public data: SourceEntry) {
     super(data.source.lines(), data.source.len(), data.source.text())

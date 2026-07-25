@@ -21,7 +21,6 @@ export { LabelAttach } from './lib/Config.js'
 export { Color, Fixed } from './lib/Color.js'
 export type { ColorValue } from './lib/Color.js'
 export { ColorGenerator } from './lib/ColorGenerator.js'
-export { Display } from './data/Display.js'
 export { sources } from './lib/Source.js'
 export {
   ANSI_IR_Render,
@@ -58,4 +57,3 @@ export {
   create_semantic_token_from_typescript_ast,
 } from './semantic_tokens/index.js'
 export type { JavaScriptASTSemanticTokenImports } from './semantic_tokens/index.js'
-export { format } from './write.js'

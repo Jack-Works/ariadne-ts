@@ -6,6 +6,7 @@ import { maxNumber, saturatingSub } from '../utils/index.js'
 import { RichText, RichTextInput } from '../rich_text.js'
 
 /// A type that represents a labelled section of source code.
+/** @internal */
 export interface Label<S extends Range> {
   span: S
   msg: Option<RichText>

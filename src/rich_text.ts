@@ -22,6 +22,7 @@ export type LocationDisplay = (
 ) => RichTextInput
 
 export class RichText {
+  /** @internal */
   readonly spans: RichTextSpan[]
 
   constructor(spans: readonly RichTextPart[]) {
@@ -36,6 +37,7 @@ export class RichText {
     })
   }
 
+  /** @internal */
   toDiagnosticSpans(): DiagnosticSpan[] {
     return this.spans.map((span) => ({
       text: span.text,
@@ -71,6 +73,7 @@ export class RichText {
     return this.lines().flatMap((line) => line.wrapLine(maxWidth))
   }
 
+  /** @internal */
   resolveDiff(
     provideSemanticTokens: (
       sourceText: string,
@@ -161,10 +164,104 @@ function diffEdits(spans: readonly RichTextSpan[]): Map<number, EditRange[]> {
     const before = spans[index]
     const after = spans[index + 1]
     if (before?.diff !== 'before' || after?.diff !== 'after') continue
-    const edit = shortestEdit(before.text, after.text)
+    const edit =
+      before.text.includes('\n') || after.text.includes('\n')
+        ? lineEdit(before.text, after.text)
+        : shortestEdit(before.text, after.text)
     result.set(index, edit.before)
     result.set(index + 1, edit.after)
     index++
+  }
+  return result
+}
+
+function lineEdit(
+  before: string,
+  after: string,
+): {
+  before: EditRange[]
+  after: EditRange[]
+} {
+  const beforeLines = lines(before)
+  const afterLines = lines(after)
+  const lengths = Array.from({ length: beforeLines.length + 1 }, () =>
+    Array<number>(afterLines.length + 1).fill(0),
+  )
+
+  for (let beforeIndex = 1; beforeIndex <= beforeLines.length; beforeIndex++) {
+    for (let afterIndex = 1; afterIndex <= afterLines.length; afterIndex++) {
+      lengths[beforeIndex]![afterIndex] =
+        beforeLines[beforeIndex - 1]?.value ===
+        afterLines[afterIndex - 1]?.value
+          ? lengths[beforeIndex - 1]![afterIndex - 1]! + 1
+          : Math.max(
+              lengths[beforeIndex - 1]![afterIndex]!,
+              lengths[beforeIndex]![afterIndex - 1]!,
+            )
+    }
+  }
+
+  const changedBefore = new Set<number>()
+  const changedAfter = new Set<number>()
+  let beforeIndex = beforeLines.length
+  let afterIndex = afterLines.length
+  while (beforeIndex > 0 || afterIndex > 0) {
+    if (
+      beforeIndex > 0 &&
+      afterIndex > 0 &&
+      beforeLines[beforeIndex - 1]?.value === afterLines[afterIndex - 1]?.value
+    ) {
+      beforeIndex--
+      afterIndex--
+    } else if (
+      beforeIndex > 0 &&
+      (afterIndex === 0 ||
+        lengths[beforeIndex - 1]![afterIndex]! >=
+          lengths[beforeIndex]![afterIndex - 1]!)
+    ) {
+      changedBefore.add(--beforeIndex)
+    } else {
+      changedAfter.add(--afterIndex)
+    }
+  }
+
+  return {
+    before: lineRanges(beforeLines, changedBefore),
+    after: lineRanges(afterLines, changedAfter),
+  }
+}
+
+interface TextLine {
+  value: string
+  start: number
+  end: number
+}
+
+function lines(text: string): TextLine[] {
+  const result: TextLine[] = []
+  let start = 0
+  for (const value of text.match(/[^\n]*\n|[^\n]+$/g) ?? []) {
+    const end = start + value.length
+    result.push({ value, start, end })
+    start = end
+  }
+  return result
+}
+
+function lineRanges(
+  lines: readonly TextLine[],
+  changed: ReadonlySet<number>,
+): EditRange[] {
+  const result: EditRange[] = []
+  for (const index of [...changed].sort((left, right) => left - right)) {
+    const line = lines[index]
+    if (line === undefined) continue
+    const previous = result.at(-1)
+    if (previous !== undefined && previous.end === line.start) {
+      previous.end = line.end
+    } else {
+      result.push({ start: line.start, end: line.end })
+    }
   }
   return result
 }

@@ -1,3 +1,4 @@
+/** @internal */
 export interface iCharacters {
   hbar: string
   vbar: string
@@ -25,6 +26,7 @@ export interface iCharacters {
   underline: string
 }
 
+/** @internal */
 export abstract class Characters {
   static unicode(): iCharacters {
     return {

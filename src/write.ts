@@ -10,10 +10,12 @@ import { RichText } from './rich_text.js'
 export type Displayable<T = unknown, E = unknown> =
   Display | RichText | Show | Option<T> | Result<T, E> | string | number
 
+/** @internal */
 export function write<W extends Write>(w: W, ...args: Displayable[]) {
   w.write(formatSpans(...args))
 }
 
+/** @internal */
 export function format(...args: Displayable[]): string {
   return formatSpans(...args)
     .map((span) => span.text)
@@ -61,6 +63,7 @@ function toSpans(value: Displayable): DiagnosticSpan[] {
   return [{ text: value.toString() }]
 }
 
+/** @internal */
 export function writeln<W extends Write>(w: W, ...args: Displayable[]) {
   w.write(formatSpans(...args))
   w.write([{ text: '\n' }])

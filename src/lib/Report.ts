@@ -38,15 +38,25 @@ import { LocationDisplay, RichText } from '../rich_text.js'
 
 /// A type representing a diagnostic that is ready to be rendered.
 export class Report<S extends Span> {
+  /** @internal */
   constructor(
+    /** @internal */
     public msg: Option<RichText>,
+    /** @internal */
     public note: Option<RichText>,
+    /** @internal */
     public help: Option<RichText>,
+    /** @internal */
     public location: [S['sourceId'], number],
+    /** @internal */
     public locationDisplay: LocationDisplay | undefined,
+    /** @internal */
     public labels: Label<S>[],
+    /** @internal */
     public config: Config,
+    /** @internal */
     public semanticTokenCapability?: SemanticTokenCapability,
+    /** @internal */
     public semanticTokenProvider?: SemanticTokenProvider,
   ) {}
 

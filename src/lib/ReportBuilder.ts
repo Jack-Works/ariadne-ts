@@ -15,6 +15,7 @@ import { LocationDisplay, RichText, RichTextInput } from '../rich_text.js'
 /// A type used to build a [`Report`].
 
 export class ReportBuilder<S extends Span> {
+  /** @internal */
   constructor(
     private msg: Option<RichText>,
     private note: Option<RichText>,
@@ -27,6 +28,7 @@ export class ReportBuilder<S extends Span> {
     private semanticTokenProvider?: SemanticTokenProvider,
   ) {}
   /// Set the message of this report.
+  /** @internal */
   set_message(msg: RichTextInput) {
     this.msg = some(RichText.from(msg))
   }
@@ -38,6 +40,7 @@ export class ReportBuilder<S extends Span> {
   }
 
   /// Set the note of this report.
+  /** @internal */
   set_note(note: RichTextInput) {
     this.note = some(RichText.from(note))
   }
@@ -49,6 +52,7 @@ export class ReportBuilder<S extends Span> {
   }
 
   /// Set the help message of this report.
+  /** @internal */
   set_help(note: RichTextInput) {
     this.help = some(RichText.from(note))
   }
@@ -60,11 +64,13 @@ export class ReportBuilder<S extends Span> {
   }
 
   /// Add a label to the report.
+  /** @internal */
   add_label(label: Label<S>) {
     this.labels.push(label)
   }
 
   /// Add multiple labels to the report.
+  /** @internal */
   add_labels(labels: Label<S>[]) {
     this.labels.push(...labels)
   }

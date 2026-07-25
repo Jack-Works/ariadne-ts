@@ -1,5 +1,6 @@
 import { AbsoluteSemanticToken, encodeSemanticTokens } from './encode.js'
 
+/** @internal */
 export interface JavaScriptASTNode {
   type: string
   loc?: {
@@ -8,12 +9,14 @@ export interface JavaScriptASTNode {
   } | null
 }
 
+/** @internal */
 export type VisitorKeys = Readonly<Record<string, readonly string[]>>
 
 interface TraversalNode extends JavaScriptASTNode {
   [key: string]: unknown
 }
 
+/** @internal */
 export function semanticTokensFromJavaScriptAST(
   root: JavaScriptASTNode,
   visitorKeys: VisitorKeys,
