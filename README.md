@@ -41,7 +41,6 @@ The standard report builder workflow uses these exports:
 | Export          | Purpose                                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `Report`        | Starts a diagnostic with `Report.build(...)`, calculates its layout, and produces plain-text, ANSI, or HTML output. |
-| `ReportKind`    | Selects the diagnostic severity, such as `Error`, `Warning`, or `Advice`.                                           |
 | `Label`         | Associates a source range with an optional annotation message and color.                                            |
 | `Range`         | Defines the zero-based, end-exclusive character offsets covered by a label.                                         |
 | `Source`        | Wraps the source string consumed when the report is laid out and rendered.                                          |

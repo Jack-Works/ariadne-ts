@@ -7,7 +7,6 @@ import {
   LabelAttach,
   Range,
   Report,
-  ReportKind,
   RichText,
   Source,
   renderAnsi,
@@ -26,9 +25,7 @@ function render(
 ): string {
   const sourceId = 'example.ts'
   const report = configure(
-    Report.build(ReportKind.Error, sourceId, 0)
-      .with_diag_code(1)
-      .with_message('Invalid expression'),
+    Report.build(sourceId, 0).with_message('Invalid expression'),
   )
     .with_config(Config.default().with_color(color))
     .finish()
@@ -39,6 +36,53 @@ function render(
 }
 
 describe('Report', () => {
+  it('colors diagnostic severity semantic tokens', () => {
+    const ir = {
+      version: 1 as const,
+      maxWidth: 80,
+      spans: [
+        {
+          text: 'Error',
+          semanticToken: { tokenType: 'error', tokenModifiers: [] },
+        },
+        { text: ' ' },
+        {
+          text: 'Warning',
+          semanticToken: { tokenType: 'warning', tokenModifiers: [] },
+        },
+        { text: ' ' },
+        {
+          text: 'Advice',
+          semanticToken: { tokenType: 'advice', tokenModifiers: [] },
+        },
+      ],
+    }
+
+    expect(renderAnsi(ir)).toBe(
+      '\u001B[31mError\u001B[39m \u001B[33mWarning\u001B[39m \u001B[38;5;147mAdvice\u001B[39m',
+    )
+    const html = renderHtml(ir)
+    expect(html).toContain('data-token-type="error"')
+    expect(html).toContain('color: light-dark(#cd3131, #f44747)')
+    expect(html).toContain('data-token-type="warning"')
+    expect(html).toContain('color: light-dark(#098658, #b5cea8)')
+    expect(html).toContain('data-token-type="advice"')
+    expect(html).toContain('color: light-dark(#af00db, #c586c0)')
+  })
+
+  it('uses only the message for the report header', () => {
+    const output = Report.build('example.ts', 0)
+      .with_message('Error: Invalid expression')
+      .finish()
+      .render(
+        { sourceId: 'example.ts', source: Source.from('value\n') },
+        'plain',
+        { maxWidth: 80 },
+      )
+
+    expect(output).toMatch(/^Error: Invalid expression\n/)
+  })
+
   it('renders rich text backgrounds', () => {
     const ir = {
       version: 1 as const,
@@ -64,7 +108,7 @@ describe('Report', () => {
     const sourceId = 'example.ts'
     const source = 'value\n'
     const requestedLanguages: string[] = []
-    const report = Report.build(ReportKind.Error, sourceId, 0)
+    const report = Report.build(sourceId, 0)
       .with_message('Invalid import')
       .with_label(
         Label.from({
@@ -145,7 +189,7 @@ describe('Report', () => {
   it('wraps annotation text within maxWidth', () => {
     const sourceId = 'example.ts'
     const source = 'const value = 1\n'
-    const report = Report.build(ReportKind.Error, sourceId, 0)
+    const report = Report.build(sourceId, 0)
       .with_message('A declaration has an incompatible value')
       .with_label(
         Label.from({
@@ -202,8 +246,7 @@ def six =
     const matchStart = source.indexOf('match')
     const matchEnd = source.indexOf('\n}\n') + 2
     let fullRequest = ''
-    const report = Report.build(ReportKind.Error, sourceId, numberStart)
-      .with_diag_code(3)
+    const report = Report.build(sourceId, numberStart)
       .with_message(
         RichText.from([
           'Incompatible types ',
@@ -317,7 +360,7 @@ def six =
     const lineStart = source.indexOf('const')
     const lineEnd = lineStart + 'const value = 1'.length
     let requestedRange: [string, number, number] | undefined
-    const report = Report.build(ReportKind.Error, sourceId, lineStart)
+    const report = Report.build(sourceId, lineStart)
       .with_message('Invalid declaration')
       .with_label(
         Label.from({
@@ -367,7 +410,7 @@ def six =
   throw new Error("hey!")
 }`
     const errorStart = source.indexOf('throw')
-    const report = Report.build(ReportKind.Error, sourceId, errorStart)
+    const report = Report.build(sourceId, errorStart)
       .with_message('hey!')
       .with_label(
         Label.from({

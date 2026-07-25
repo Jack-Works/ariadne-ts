@@ -1,11 +1,4 @@
-import {
-  Label,
-  Range,
-  Report,
-  ReportKind,
-  RichText,
-  Source,
-} from '@magic-works/ariadne'
+import { Label, Range, Report, RichText, Source } from '@magic-works/ariadne'
 
 const sourceId = 'sample.tao'
 const source = `def five = match () in {
@@ -22,8 +15,7 @@ const stringStart = source.indexOf('"5"')
 const matchStart = source.indexOf('match')
 const matchEnd = source.indexOf('\n}\n') + 2
 
-const output = Report.build(ReportKind.Error, sourceId, numberStart)
-  .with_diag_code(3)
+const output = Report.build(sourceId, numberStart)
   .with_message(
     RichText.from([
       'Incompatible types ',

@@ -10,15 +10,12 @@ import {
 import { Config } from './Config.js'
 import { Label } from './Label.js'
 import { Report } from './Report.js'
-import { ReportKind } from './ReportKind.js'
 import { LocationDisplay, RichText, RichTextInput } from '../rich_text.js'
 
 /// A type used to build a [`Report`].
 
 export class ReportBuilder<S extends Span> {
   constructor(
-    private kind: ReportKind,
-    private code: Option<string>,
     private msg: Option<RichText>,
     private note: Option<RichText>,
     private help: Option<RichText>,
@@ -29,12 +26,6 @@ export class ReportBuilder<S extends Span> {
     private semanticTokenCapability?: SemanticTokenCapability,
     private semanticTokenProvider?: SemanticTokenProvider,
   ) {}
-  /// Give this report a numerical code that may be used to more precisely look up the error in documentation.
-  with_diag_code(code: number | string): this {
-    this.code = some(code.toString().padStart(2, '0'))
-    return this
-  }
-
   /// Set the message of this report.
   set_message(msg: RichTextInput) {
     this.msg = some(RichText.from(msg))
@@ -131,8 +122,6 @@ export class ReportBuilder<S extends Span> {
   /// Finish building the [`Report`].
   finish(): Report<S> {
     const r = new Report<S>(
-      this.kind,
-      this.code,
       this.msg,
       this.note,
       this.help,

@@ -1,4 +1,4 @@
-import { ColorValue, Fixed } from './lib/Color.js'
+import { ColorValue, colors, Fixed } from './lib/Color.js'
 import { SemanticToken } from './semantic_tokens.js'
 
 export interface DiagnosticSpan {
@@ -71,6 +71,9 @@ export const defaultANSISemanticTokenColorScheme: ANSISemanticTokenColorScheme =
       regexp: Fixed(167),
       operator: Fixed(252),
       decorator: Fixed(187),
+      error: colors.red,
+      warning: colors.yellow,
+      advice: Fixed(147),
     },
     tokenModifiers: {},
   }
@@ -106,6 +109,9 @@ export const defaultHTMLSemanticTokenColorScheme: HTMLSemanticTokenColorScheme =
       regexp: 'light-dark(#811f3f, #d16969)',
       operator: 'light-dark(#000000, #d4d4d4)',
       decorator: 'light-dark(#795e26, #dcdcaa)',
+      error: 'light-dark(#cd3131, #f44747)',
+      warning: 'light-dark(#098658, #b5cea8)',
+      advice: 'light-dark(#af00db, #c586c0)',
     },
     tokenModifiers: {},
   }

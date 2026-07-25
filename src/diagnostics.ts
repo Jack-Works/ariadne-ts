@@ -4,7 +4,6 @@ import { ColorValue, Color, Fixed } from './lib/Color.js'
 import { Config } from './lib/Config.js'
 import { Label } from './lib/Label.js'
 import { Report } from './lib/Report.js'
-import { ReportKind } from './lib/ReportKind.js'
 import { Source } from './lib/Source.js'
 import { OutputBackend } from './ir.js'
 import { format } from './write.js'
@@ -58,23 +57,6 @@ const makeFstring = (fstring: Fstring) => {
   return format(fstring.template, ...fstring.args.map(mapFstringArg))
 }
 
-type DiagnosticType = 'Error' | 'Advice' | 'Custom' | 'Warning'
-
-const mkReportKind = (kind: DiagnosticType) => {
-  switch (kind) {
-    case 'Error':
-      return ReportKind.Error
-    case 'Advice':
-      return ReportKind.Advice
-    case 'Custom':
-      return ReportKind.Custom
-    case 'Warning':
-      return ReportKind.Warning
-    default:
-      throw new Error(`Unknown DiagnosticType "${kind}"`)
-  }
-}
-
 const isString = (s: unknown) => typeof s === 'string'
 const mkText = (s: string | Fstring) => (isString(s) ? s : makeFstring(s))
 const mkRange = (range: LabelRange) => new Range(range.start, range.end)
@@ -82,8 +64,6 @@ const mkRange = (range: LabelRange) => new Range(range.start, range.end)
 export function createDiagnostic(options: {
   sourceId: string
   message: string | Fstring
-  type: DiagnosticType
-  code?: number
   offset?: number
   labels: LabelDef[]
   note?: string | Fstring
@@ -95,8 +75,6 @@ export function createDiagnostic(options: {
   const {
     sourceId,
     message,
-    code,
-    type,
     labels,
     offset,
     note,
@@ -106,9 +84,7 @@ export function createDiagnostic(options: {
     backend = 'ansi',
   } = options
 
-  let report = Report.build(mkReportKind(type), sourceId, offset ?? 0)
-    .with_diag_code(code ?? -1)
-    .with_message(mkText(message))
+  let report = Report.build(sourceId, offset ?? 0).with_message(mkText(message))
 
   labels.forEach((label) => {
     const { fstring, color, range } = label

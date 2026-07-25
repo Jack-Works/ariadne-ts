@@ -1,4 +1,4 @@
-import { ColorValue, colors, Fixed } from './Color.js'
+import { ColorValue, Fixed } from './Color.js'
 import { Display } from '../data/Display.js'
 import { Option, some } from '../data/Option.js'
 
@@ -86,15 +86,6 @@ export class Config {
     return this
   }
 
-  error_color(): Option<ColorValue> {
-    return some(colors.red).filter(() => this.color)
-  }
-  warning_color(): Option<ColorValue> {
-    return some(colors.yellow).filter(() => this.color)
-  }
-  advice_color(): Option<ColorValue> {
-    return some(Fixed(147)).filter(() => this.color)
-  }
   margin_color(): Option<ColorValue> {
     return some(Fixed(246)).filter(() => this.color)
   }

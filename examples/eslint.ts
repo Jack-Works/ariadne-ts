@@ -4,7 +4,6 @@ import {
   LabelAttach,
   Range,
   Report,
-  ReportKind,
   RichText,
   Source,
   create_semantic_token_from_estree_ast,
@@ -43,7 +42,7 @@ const diff = RichText.from([
 const importStart = source.indexOf('import')
 const importEnd = source.indexOf('\n')
 const valueUseStart = source.indexOf('new Option')
-const output = Report.build(ReportKind.Error, sourceId, valueUseStart)
+const output = Report.build(sourceId, valueUseStart)
   .with_message('Type-only import used as a value')
   .with_label(
     Label.from({

@@ -1,4 +1,4 @@
-import { Label, Range, Report, ReportKind, sources } from '@magic-works/ariadne'
+import { Label, Range, Report, sources } from '@magic-works/ariadne'
 
 const mainSourceId = 'src/main.ts'
 const configSourceId = 'src/config.ts'
@@ -8,7 +8,7 @@ const configSource = `export const port: string = "3000"`
 const portUse = mainSource.lastIndexOf('port')
 const portDeclaration = configSource.indexOf('port:')
 
-const output = Report.build(ReportKind.Error, mainSourceId, portUse)
+const output = Report.build(mainSourceId, portUse)
   .with_message('The server port must be a number')
   .with_label(
     Label.from({

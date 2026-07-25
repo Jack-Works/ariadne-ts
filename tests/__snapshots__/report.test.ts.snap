@@ -1,7 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Report > colors diff rich text with the semantic token provider > ANSI diff 1`] = `
-"[31mError:[39m Invalid import
+"Invalid import
    [38;5;246m╭─[[39mexample.ts:1:1[38;5;246m][39m
    [38;5;246m│[39m
  [38;5;246m1 │[39m value
@@ -14,7 +14,7 @@ exports[`Report > colors diff rich text with the semantic token provider > ANSI 
 `;
 
 exports[`Report > colors diff rich text with the semantic token provider > plain diff 1`] = `
-"Error: Invalid import
+"Invalid import
    ╭─[example.ts:1:1]
    │
  1 │ value
@@ -187,7 +187,7 @@ exports[`Report > colors diff rich text with the semantic token provider 2`] = `
 `;
 
 exports[`Report > keeps context lines inside a multiline label 1`] = `
-"Error: hey!
+"hey!
    ╭─[example.ts:3:3]
    │
  1 │ ╭─▶ function main() {
@@ -201,7 +201,7 @@ exports[`Report > keeps context lines inside a multiline label 1`] = `
 `;
 
 exports[`Report > renders a multiline label and note 1`] = `
-"[E01] Error: Invalid expression
+"Invalid expression
    ╭─[example.ts:1:1]
    │
  1 │ ╭─▶ const value = {
@@ -222,7 +222,7 @@ exports[`Report > renders a multiline label and note 1`] = `
 `;
 
 exports[`Report > renders an inline label 1`] = `
-"[E01] Error: Invalid expression
+"Invalid expression
    ╭─[example.ts:1:1]
    │
  1 │ const answer = false
@@ -265,7 +265,7 @@ exports[`Report > requests ranged semantic tokens for the laid out lines 1`] = `
 `;
 
 exports[`Report > serializes layout IR and renders every backend > ANSI 1`] = `
-"[31m[E03] Error:[39m Incompatible types ]8;;https://example.com/error?code=3\\[38;5;252m[docs][39m]8;;\\
+"Incompatible types ]8;;https://example.com/error?code=3\\[38;5;252m[docs][39m]8;;\\
    [38;5;246m╭─[[39m]8;;https://example.com/source/sample.tao#L2\\[38;5;173msample.tao:2:11[39m]8;;\\[38;5;246m][39m
    [38;5;246m│[39m
  [38;5;246m1 │[39m ╭─▶ [38;5;68m[2mdef[22m[39m[38;5;249m [39m[38;5;153m[2mfive[22m[39m[38;5;249m = [39m[38;5;68mmatch[39m () [38;5;68min[39m {
@@ -292,14 +292,7 @@ exports[`Report > serializes layout IR and renders every backend > IR 1`] = `
   "maxWidth": 100,
   "spans": [
     {
-      "foreground": {
-        "kind": "named",
-        "name": "red",
-      },
-      "text": "[E03] Error:",
-    },
-    {
-      "text": " Incompatible types ",
+      "text": "Incompatible types ",
     },
     {
       "link": "https://example.com/error?code=3",
@@ -693,12 +686,15 @@ exports[`Report > serializes layout IR and renders every backend > LSP semantic 
     "operator",
     "decorator",
     "label",
+    "error",
+    "warning",
+    "advice",
   ],
 }
 `;
 
 exports[`Report > serializes layout IR and renders every backend > plain 1`] = `
-"[E03] Error: Incompatible types [docs]
+"Incompatible types [docs]
    ╭─[sample.tao:2:11]
    │
  1 │ ╭─▶ def five = match () in {
@@ -758,8 +754,8 @@ exports[`Report > uses deeper backgrounds for substituted diff text 1`] = `
 `;
 
 exports[`Report > wraps annotation text within maxWidth 1`] = `
-"Error: A declaration has an
-       incompatible value
+"A declaration has an incompatible
+value
    ╭─[example.ts:1:1]
    │
  1 │ const value = 1

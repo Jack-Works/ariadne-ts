@@ -2,7 +2,6 @@ import {
   Label,
   Range,
   Report,
-  ReportKind,
   Source,
   create_semantic_token_from_typescript_ast,
 } from '@magic-works/ariadne'
@@ -24,7 +23,7 @@ const functionStart = source.indexOf('export function')
 const functionEnd = source.indexOf('\n}\n') + 2
 const errorStart = source.indexOf('throw')
 
-const output = Report.build(ReportKind.Error, sourceId, errorStart)
+const output = Report.build(sourceId, errorStart)
   .with_message('hey!')
   .with_label(
     Label.from({

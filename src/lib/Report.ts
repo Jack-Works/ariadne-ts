@@ -26,7 +26,6 @@ import { ColorValue } from './Color.js'
 import { Label } from './Label.js'
 import { LabelInfo, LabelKind } from './LabelInfo.js'
 import { ReportBuilder } from './ReportBuilder.js'
-import { ReportKind } from './ReportKind.js'
 import {
   decodeSemanticTokens,
   DecodedSemanticToken,
@@ -40,8 +39,6 @@ import { LocationDisplay, RichText } from '../rich_text.js'
 /// A type representing a diagnostic that is ready to be rendered.
 export class Report<S extends Span> {
   constructor(
-    public kind: ReportKind,
-    public code: Option<string>,
     public msg: Option<RichText>,
     public note: Option<RichText>,
     public help: Option<RichText>,
@@ -55,14 +52,11 @@ export class Report<S extends Span> {
 
   /// Begin building a new [`Report`].
   static build<S extends Span, Id extends string>(
-    kind: ReportKind,
     sourceId: Id | null,
     offset: number,
   ): ReportBuilder<S> {
     // TODO
     const builder = new ReportBuilder<S>(
-      kind,
-      none(),
       none(),
       none(),
       none(),
@@ -210,30 +204,11 @@ export class Report<S extends Span> {
 
     // --- Header ---
 
-    const code = this.code.map_or('', (value) => format('[E{}] ', value))
-    let id = format('{}{}:', code, this.kind)
-    const kind_color =
-      this.kind === ReportKind.Error
-        ? this.config.error_color()
-        : this.kind === ReportKind.Warning
-          ? this.config.warning_color()
-          : this.kind === ReportKind.Advice
-            ? this.config.advice_color()
-            : none<ColorValue>()
-
     const headerLines = this.msg
-      .map((message) =>
-        this.resolveRichText(message).wrap(
-          Math.max(1, maxWidth - id.length - 1),
-        ),
-      )
+      .map((message) => this.resolveRichText(message).wrap(maxWidth))
       .unwrap_or_else(() => [RichText.from('')])
-    for (const [index, messageLine] of headerLines.entries()) {
-      if (index === 0) {
-        writeln(w, '{} {}', new Display(id).fg(kind_color), messageLine)
-      } else {
-        writeln(w, '{}{}', new Show([' ', id.length + 1]), messageLine)
-      }
+    for (const messageLine of headerLines) {
+      writeln(w, '{}', messageLine)
     }
 
     let groups = this.get_source_groups(cache)

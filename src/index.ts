@@ -1,6 +1,5 @@
 // Core diagnostic API
 export { Report } from './lib/Report.js'
-export { ReportKind } from './lib/ReportKind.js'
 export { Label } from './lib/Label.js'
 export { Range } from './data/Range.js'
 export { Source } from './lib/Source.js'

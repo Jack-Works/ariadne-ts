@@ -25,6 +25,10 @@ export const semanticTokenTypes = [
   'operator',
   'decorator',
   'label',
+  // Ariadne-specific diagnostic severity tokens.
+  'error',
+  'warning',
+  'advice',
 ] as const
 
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.18/specification/#semanticTokenModifiers
