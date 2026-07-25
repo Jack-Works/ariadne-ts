@@ -1,11 +1,12 @@
 import { Display } from './data/Display.js'
 import { Range } from './data/Range.js'
-import { ColorFn, Color, Fixed } from './lib/Color.js'
+import { ColorValue, Color, Fixed } from './lib/Color.js'
 import { Config } from './lib/Config.js'
 import { Label } from './lib/Label.js'
 import { Report } from './lib/Report.js'
 import { ReportKind } from './lib/ReportKind.js'
 import { Source } from './lib/Source.js'
+import { OutputBackend } from './ir.js'
 import { format } from './write.js'
 
 type ColorName = 'red' | 'green' | 'yellow' | 'blue'
@@ -33,7 +34,7 @@ type LabelDef = {
   color?: ColorArg
 }
 
-const getColorFn = (color: ColorArg): ColorFn => {
+const getColor = (color: ColorArg): ColorValue => {
   switch (color) {
     case 'blue':
     case 'green':
@@ -50,7 +51,7 @@ const getColorFn = (color: ColorArg): ColorFn => {
 
 const mapFstringArg = (arg: FstringArg) => {
   const rv = new Display(arg.text)
-  return arg.color ? rv.fg(getColorFn(arg.color)) : rv
+  return arg.color ? rv.fg(getColor(arg.color)) : rv
 }
 
 const makeFstring = (fstring: Fstring) => {
@@ -87,6 +88,8 @@ export function createDiagnostic(options: {
   labels: LabelDef[]
   note?: string | Fstring
   tabWidth?: number
+  maxWidth: number
+  backend?: OutputBackend
   source: string
 }) {
   const {
@@ -99,6 +102,8 @@ export function createDiagnostic(options: {
     note,
     source,
     tabWidth,
+    maxWidth,
+    backend = 'ansi',
   } = options
 
   let report = Report.build(mkReportKind(type), filename, offset ?? 0)
@@ -112,7 +117,7 @@ export function createDiagnostic(options: {
       mkText(fstring),
     )
 
-    if (color) report.add_label(_label.with_color(getColorFn(color)))
+    if (color) report.add_label(_label.with_color(getColor(color)))
     else report.add_label(_label)
   })
 
@@ -130,5 +135,5 @@ export function createDiagnostic(options: {
   return report
     .with_config(config)
     .finish()
-    .render([filename, Source.from(source)])
+    .render([filename, Source.from(source)], backend, { maxWidth })
 }

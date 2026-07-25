@@ -37,7 +37,7 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
   )
   .with_note('Outputs of match expressions must coerce to the same type')
   .finish()
-  .render([filename, Source.from(source)])
+  .render([filename, Source.from(source)], 'ansi', { maxWidth: 100 })
 
 declare const console: { log(value: string): void }
 console.log(output)

@@ -1,15 +1,19 @@
-export type ColorFn = (value: string) => string
-
-function ansi(open: string, close: string): ColorFn {
-  return (value) => `\u001B[${open}m${value}\u001B[${close}m`
-}
+export type ColorValue =
+  | {
+      kind: 'named'
+      name: 'blue' | 'green' | 'red' | 'yellow'
+    }
+  | {
+      kind: 'ansi256'
+      index: number
+    }
 
 export const colors = {
-  blue: ansi('34', '39'),
-  green: ansi('32', '39'),
-  red: ansi('31', '39'),
-  yellow: ansi('33', '39'),
-}
+  blue: { kind: 'named', name: 'blue' },
+  green: { kind: 'named', name: 'green' },
+  red: { kind: 'named', name: 'red' },
+  yellow: { kind: 'named', name: 'yellow' },
+} as const satisfies Record<string, ColorValue>
 
 export abstract class Color {
   static Fixed = Fixed
@@ -17,5 +21,5 @@ export abstract class Color {
 }
 
 export function Fixed(n: number) {
-  return ansi(`38;5;${n}`, '39')
+  return { kind: 'ansi256', index: n } as const satisfies ColorValue
 }

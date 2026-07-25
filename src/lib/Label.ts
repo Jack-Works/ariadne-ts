@@ -1,4 +1,4 @@
-import { ColorFn } from './Color.js'
+import { ColorValue } from './Color.js'
 import { none, Option, some } from '../data/Option.js'
 import { SpanInit } from '../data/Span.js'
 import { Range } from '../data/Range.js'
@@ -8,7 +8,7 @@ import { maxNumber, saturatingSub } from '../utils/index.js'
 export interface Label<S extends Range> {
   span: S
   msg: Option<string>
-  color: Option<ColorFn>
+  color: Option<ColorValue>
   order: number
   priority: number
 }
@@ -30,7 +30,7 @@ export class Label<S> {
   }
 
   /// Give this label a highlight colour.
-  with_color(color: ColorFn): this {
+  with_color(color: ColorValue): this {
     this.color = some(color)
     return this
   }

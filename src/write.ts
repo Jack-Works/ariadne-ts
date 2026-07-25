@@ -1,47 +1,63 @@
 import { Display, isDisplay } from './data/Display.js'
-import { stringFormatter } from './data/Formatter.js'
+import { irFormatter } from './data/Formatter.js'
 import { isOption, Option } from './data/Option.js'
 import { isResult, Result } from './data/Result.js'
 import { Write } from './data/Write.js'
 import { isShow, Show } from './data/Show.js'
+import { DiagnosticSpan } from './ir.js'
 
 export type Displayable<T = unknown, E = unknown> =
   Display | Show | Option<T> | Result<T, E> | string | number
 
 export function write<W extends Write>(w: W, ...args: Displayable[]) {
-  w.write_fmt(format(...args.map(fromRust)))
+  w.write(formatSpans(...args))
 }
 
 export function format(...args: Displayable[]): string {
-  const [head, ...rest] = args.map(fromRust)
-  let index = 0
-  return head.replaceAll(/\{\{|\}\}|\{\}/g, (placeholder) => {
-    if (placeholder === '{{') return '{'
-    if (placeholder === '}}') return '}'
-    return rest[index++] ?? placeholder
-  })
+  return formatSpans(...args)
+    .map((span) => span.text)
+    .join('')
 }
 
-function fromRust(value: Displayable): string {
+function formatSpans(...args: Displayable[]): DiagnosticSpan[] {
+  const [head = [], ...rest] = args.map(toSpans)
+  const template = head.map((span) => span.text).join('')
+  const spans: DiagnosticSpan[] = []
+  let index = 0
+  let cursor = 0
+
+  for (const match of template.matchAll(/\{\{|\}\}|\{\}/g)) {
+    const offset = match.index
+    if (offset > cursor) spans.push({ text: template.slice(cursor, offset) })
+    const placeholder = match[0]
+    if (placeholder === '{{') spans.push({ text: '{' })
+    else if (placeholder === '}}') spans.push({ text: '}' })
+    else spans.push(...(rest[index++] ?? [{ text: placeholder }]))
+    cursor = offset + placeholder.length
+  }
+  if (cursor < template.length) spans.push({ text: template.slice(cursor) })
+  return spans
+}
+
+function toSpans(value: Displayable): DiagnosticSpan[] {
   if (isDisplay(value)) {
-    return value.display()
+    return [value.toSpan()]
   }
   if (isShow(value)) {
-    let f = stringFormatter()
+    let f = irFormatter()
     value.fmt(f)
-    return f.unwrap()
+    return f.toSpans()
   }
   if (isOption<string>(value)) {
-    return value.unwrap_or_else(() => '')
+    return [{ text: value.unwrap_or_else(() => '') }]
   }
   if (isResult(value)) {
-    return String(value.unwrap_or_else(() => '<(Unwrap Err)>'))
+    return [{ text: String(value.unwrap_or_else(() => '<(Unwrap Err)>')) }]
   }
-  return value.toString()
+  return [{ text: value.toString() }]
 }
 
 export function writeln<W extends Write>(w: W, ...args: Displayable[]) {
-  let val = format(...args.map(fromRust))
-  w.write_fmt(val)
-  w.write_fmt('\n')
+  w.write(formatSpans(...args))
+  w.write([{ text: '\n' }])
 }

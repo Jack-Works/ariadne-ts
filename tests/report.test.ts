@@ -7,6 +7,9 @@ import {
   Report,
   ReportKind,
   Source,
+  renderAnsi,
+  renderHtml,
+  renderPlain,
 } from '../src/index.js'
 
 function render(
@@ -25,7 +28,9 @@ function render(
     .with_config(Config.default().with_color(color))
     .finish()
 
-  return report.render([filename, Source.from(source)])
+  return report.render([filename, Source.from(source)], 'plain', {
+    maxWidth: 80,
+  })
 }
 
 describe('Report', () => {
@@ -42,20 +47,27 @@ describe('Report', () => {
     expect(output).toMatchSnapshot()
   })
 
-  it('renders ANSI colors', () => {
-    const output = render(
-      'const answer = false\n',
-      (report) =>
-        report.with_label(
-          Label.from(['example.ts', Range.new(15, 20)])
-            .with_message('Expected a number')
-            .with_color(Color.Named.blue),
-        ),
-      true,
-    )
+  it('serializes layout IR and renders every backend', async () => {
+    const filename = 'example.ts'
+    const source = 'const answer = false\n'
+    const report = Report.build(ReportKind.Error, filename, 0)
+      .with_code(1)
+      .with_message('Invalid expression')
+      .with_label(
+        Label.from([filename, Range.new(15, 20)])
+          .with_message('Expected a number')
+          .with_color(Color.Named.blue),
+      )
+      .finish()
+    const ir = report.toIR([filename, Source.from(source)], { maxWidth: 80 })
 
-    expect(output).toContain('\u001B[')
-    expect(output).toMatchSnapshot()
+    expect(JSON.parse(JSON.stringify(ir))).toEqual(ir)
+    expect(ir).toMatchSnapshot('IR')
+    expect(renderPlain(ir)).toMatchSnapshot('plain')
+    expect(renderAnsi(ir)).toMatchSnapshot('ANSI')
+    await expect(renderHtml(ir)).toMatchFileSnapshot(
+      './__snapshots__/report.html',
+    )
   })
 
   it('renders a multiline label and note', () => {

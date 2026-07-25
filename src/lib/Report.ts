@@ -3,7 +3,8 @@ import { none, Option, some } from '../data/Option.js'
 import { Range } from '../data/Range.js'
 import { Show } from '../data/Show.js'
 import { Span } from '../data/Span.js'
-import { mkStringWriter, Write } from '../data/Write.js'
+import { createIRWriter, Write } from '../data/Write.js'
+import { DiagnosticIR, LayoutOptions, OutputBackend, renderIR } from '../ir.js'
 import { CharSet, Config, LabelAttach } from '../lib/Config.js'
 import {
   bton,
@@ -21,7 +22,7 @@ import {
 } from '../utils/index.js'
 import { format, write, writeln } from '../write.js'
 import { Characters, iCharacters } from './Characters.js'
-import { ColorFn } from './Color.js'
+import { ColorValue } from './Color.js'
 import { Label } from './Label.js'
 import { LabelInfo, LabelKind } from './LabelInfo.js'
 import { ReportBuilder } from './ReportBuilder.js'
@@ -62,12 +63,24 @@ export class Report<S extends Span> {
     return builder
   }
 
-  /// Render this diagnostic to a string.
-  render(init: CacheInit): string {
+  /// Calculate layout and return a serializable intermediate representation.
+  toIR(init: CacheInit, options: LayoutOptions): DiagnosticIR {
+    if (!Number.isInteger(options.maxWidth) || options.maxWidth <= 0) {
+      throw new Error('maxWidth must be a positive integer')
+    }
     const cache = Cache.from(init)
-    const writer = mkStringWriter()
+    const writer = createIRWriter()
     this.write(cache, writer)
-    return writer.unwrap()
+    return writer.finish(options.maxWidth)
+  }
+
+  /// Calculate layout and render it with the selected output backend.
+  render(
+    init: CacheInit,
+    backend: OutputBackend,
+    options: LayoutOptions,
+  ): string {
+    return renderIR(this.toIR(init, options), backend)
   }
 
   private get_source_groups(cache: Cache<S['SourceId']>): SourceGroup<S>[] {
@@ -142,7 +155,7 @@ export class Report<S extends Span> {
           ? this.config.warning_color()
           : this.kind === ReportKind.Advice
             ? this.config.advice_color()
-            : none<ColorFn>()
+            : none<ColorValue>()
 
     writeln(w, '{} {}', new Display(id).fg(kind_color), new Show(this.msg))
 

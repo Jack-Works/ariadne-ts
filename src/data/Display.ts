@@ -1,26 +1,17 @@
-import { isCallback } from '../utils/index.js'
-import { ColorFn } from '../lib/Color.js'
+import { DiagnosticSpan } from '../ir.js'
+import { ColorValue } from '../lib/Color.js'
 import { isOption, type Option } from './Option.js'
 
 export class Display {
   constructor(value: string | Display) {
     this.value = typeof value === 'string' ? value : value.value
+    this.foreground = typeof value === 'string' ? undefined : value.foreground
   }
-  fg(color: Option<ColorFn> | ColorFn): this {
+  fg(color: Option<ColorValue> | ColorValue): this {
     if (isOption(color)) {
-      const func = color.unwrap_or_else(() => (value: string) => value)
-      this.value = func(this.value)
-    } else if (isCallback(color)) {
-      this.value = color(this.value)
-    }
-    return this
-  }
-  bg(color: Option<ColorFn> | ColorFn): this {
-    if (isOption(color)) {
-      const func = color.unwrap_or_else(() => (value: string) => value)
-      this.value = func(this.value)
-    } else if (isCallback(color)) {
-      this.value = color(this.value)
+      if (color.is_some()) this.foreground = color.unwrap()
+    } else {
+      this.foreground = color
     }
     return this
   }
@@ -33,6 +24,11 @@ export class Display {
   display(): string {
     return this.value
   }
+  toSpan(): DiagnosticSpan {
+    return this.foreground === undefined
+      ? { text: this.value }
+      : { text: this.value, foreground: this.foreground }
+  }
   toString(): string {
     return this.value
   }
@@ -41,6 +37,7 @@ export class Display {
   }
 
   private value: string
+  private foreground: ColorValue | undefined
 
   static is = (o: unknown): o is Display => o instanceof Display
 }

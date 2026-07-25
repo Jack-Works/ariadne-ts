@@ -1,13 +1,18 @@
-import { mkStringWriter, type Write } from './Write.js'
+import { DiagnosticSpan } from '../ir.js'
+import { createIRWriter, type Write } from './Write.js'
 
 export interface Formatter {
   buf: Write
 }
 
-export const stringFormatter = () =>
-  new (class implements Formatter {
-    buf = mkStringWriter()
-    unwrap() {
-      return this.buf.unwrap()
-    }
-  })()
+export interface IRFormatter extends Formatter {
+  toSpans(): DiagnosticSpan[]
+}
+
+export const irFormatter = (): IRFormatter => {
+  const writer = createIRWriter()
+  return {
+    buf: writer,
+    toSpans: () => writer.toSpans(),
+  }
+}

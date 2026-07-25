@@ -1,4 +1,4 @@
-import { ColorFn, Fixed } from './Color.js'
+import { ColorValue, Fixed } from './Color.js'
 import { clamp, range, wrapping_add_usize } from '../utils/index.js'
 
 /// A type that can generate distinct 8-bit colors.
@@ -24,7 +24,7 @@ export class ColorGenerator {
   }
 
   /// Generate the next colour in the sequence.
-  next(out?: [number, ColorFn][]): ColorFn {
+  next(out?: [number, ColorValue][]): ColorValue {
     for (let i of range(0, 3)) {
       // magic constant, one of only two that have this property!
       const rhs = 40503 * (i * 4 + 1130)
