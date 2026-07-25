@@ -113,9 +113,10 @@ export function createDiagnostic(options: {
   labels.forEach((label) => {
     const { fstring, color, range } = label
 
-    const _label = Label.from([filename, mkRange(range)]).with_message(
-      mkText(fstring),
-    )
+    const _label = Label.from({
+      src: filename,
+      range: mkRange(range),
+    }).with_message(mkText(fstring))
 
     if (color) report.add_label(_label.with_color(getColor(color)))
     else report.add_label(_label)
@@ -135,5 +136,7 @@ export function createDiagnostic(options: {
   return report
     .with_config(config)
     .finish()
-    .render([filename, Source.from(source)], backend, { maxWidth })
+    .render({ id: filename, source: Source.from(source) }, backend, {
+      maxWidth,
+    })
 }

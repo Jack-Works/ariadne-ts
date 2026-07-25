@@ -18,6 +18,7 @@ export type OutputBackend = 'plain' | 'ansi' | 'html'
 
 export interface LayoutOptions {
   maxWidth: number
+  contextLines?: number
 }
 
 export interface ANSISemanticTokenColorScheme {

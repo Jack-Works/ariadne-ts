@@ -1,14 +1,28 @@
-export { Display } from './data/Display.js'
+// Core diagnostic API
+export { Report } from './lib/Report.js'
+export { ReportKind } from './lib/ReportKind.js'
+export { Label } from './lib/Label.js'
 export { Range } from './data/Range.js'
+export { Source } from './lib/Source.js'
+export type { LayoutOptions, OutputBackend } from './ir.js'
+export type { SpanInit } from './data/Span.js'
+export type { SourceInput } from './lib/Source.js'
+
+// Optional customization, rendering, and integrations
+export { RichText } from './rich_text.js'
+export type {
+  LocationDisplay,
+  RichTextInput,
+  RichTextPart,
+  RichTextSpan,
+} from './rich_text.js'
+export { createDiagnostic } from './diagnostics.js'
+export { Config } from './lib/Config.js'
 export { Color, Fixed } from './lib/Color.js'
 export type { ColorValue } from './lib/Color.js'
 export { ColorGenerator } from './lib/ColorGenerator.js'
-export { Config } from './lib/Config.js'
-export { Label } from './lib/Label.js'
-export { Report } from './lib/Report.js'
-export { ReportKind } from './lib/ReportKind.js'
-export { Source, sources } from './lib/Source.js'
-export { createDiagnostic } from './diagnostics.js'
+export { Display } from './data/Display.js'
+export { sources } from './lib/Source.js'
 export {
   ANSI_IR_Render,
   defaultANSISemanticTokenColorScheme,
@@ -28,9 +42,11 @@ export type {
   DiagnosticSpan,
   HTMLSemanticTokenColorScheme,
   HTMLTextColorScheme,
-  LayoutOptions,
-  OutputBackend,
 } from './ir.js'
+export {
+  semanticTokenModifiers,
+  semanticTokenTypes,
+} from './semantic_tokens.js'
 export type {
   DecodedSemanticToken,
   SemanticToken,
@@ -38,14 +54,8 @@ export type {
   SemanticTokenProvider,
 } from './semantic_tokens.js'
 export {
-  semanticTokenModifiers,
-  semanticTokenTypes,
-} from './semantic_tokens.js'
+  create_semantic_token_from_estree_ast,
+  create_semantic_token_from_typescript_ast,
+} from './semantic_tokens/index.js'
+export type { JavaScriptASTSemanticTokenImports } from './semantic_tokens/index.js'
 export { format } from './write.js'
-export { RichText } from './rich_text.js'
-export type {
-  LocationDisplay,
-  RichTextInput,
-  RichTextPart,
-  RichTextSpan,
-} from './rich_text.js'

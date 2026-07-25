@@ -10,14 +10,14 @@ import {
 import { Config } from './Config.js'
 import { Label } from './Label.js'
 import { Report } from './Report.js'
-import { ReportKindConstructor } from './ReportKind.js'
+import { ReportKind } from './ReportKind.js'
 import { LocationDisplay, RichText, RichTextInput } from '../rich_text.js'
 
 /// A type used to build a [`Report`].
 
 export class ReportBuilder<S extends Span> {
   constructor(
-    private kind: ReportKindConstructor,
+    private kind: ReportKind,
     private code: Option<string>,
     private msg: Option<RichText>,
     private note: Option<RichText>,

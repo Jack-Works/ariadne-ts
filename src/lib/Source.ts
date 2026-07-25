@@ -12,7 +12,12 @@ import { Displayable, format } from '../write.js'
 
 export type ErrMsg = string
 
-export type CacheInit = [id: string, source: Source] | Source | FnCache<string>
+export interface CacheEntry {
+  id: string
+  source: Source
+}
+
+export type SourceInput = CacheEntry | Source | FnCache<string>
 
 /// A trait implemented by [`Source`] caches.
 export abstract class Cache<Id> {
@@ -24,11 +29,10 @@ export abstract class Cache<Id> {
   /// This function may make use of attributes from the [`Fmt`] trait.
   abstract display(id: Id): Option<Displayable>
 
-  static from(init: CacheInit): Cache<string> {
+  static from(init: SourceInput): Cache<string> {
     if (Source.is(init)) return init
     if (FnCache.is(init)) return init
-    const [, source] = init
-    return new IdSource(source.lines(), source.len(), init)
+    return new IdSource(init.source.lines(), init.source.len(), init)
   }
 }
 
@@ -167,13 +171,13 @@ export class IdSource extends Source {
   constructor(
     _lines: Line[],
     _len: number,
-    public data: [id: string, source: Source],
+    public data: CacheEntry,
   ) {
     super(_lines, _len)
   }
   fetch(id: string): Result<Source, ErrMsg> {
-    return id === this.data[0]
-      ? ok(this.data[1])
+    return id === this.data.id
+      ? ok(this.data.source)
       : err(format("Failed to fetch source '{}'", id))
   }
   display(id: string): Option<Display> {

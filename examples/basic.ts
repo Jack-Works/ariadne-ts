@@ -35,10 +35,10 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
     ]),
   )
   .with_label(
-    Label.from([
-      filename,
-      Range.new(numberStart, numberStart + 1),
-    ]).with_message(
+    Label.from({
+      src: filename,
+      range: Range.new(numberStart, numberStart + 1),
+    }).with_message(
       RichText.from([
         'This is of type ',
         { text: 'Nat', semanticToken: 'type' },
@@ -46,10 +46,10 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
     ),
   )
   .with_label(
-    Label.from([
-      filename,
-      Range.new(stringStart, stringStart + 3),
-    ]).with_message(
+    Label.from({
+      src: filename,
+      range: Range.new(stringStart, stringStart + 3),
+    }).with_message(
       RichText.from([
         'This is of type ',
         { text: 'Str', semanticToken: 'type' },
@@ -57,7 +57,10 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
     ),
   )
   .with_label(
-    Label.from([filename, Range.new(matchStart, matchEnd)]).with_message(
+    Label.from({
+      src: filename,
+      range: Range.new(matchStart, matchEnd),
+    }).with_message(
       RichText.from([
         'The values are outputs of this match expression.\n',
         'Call stack:\n',
@@ -94,7 +97,9 @@ const output = Report.build(ReportKind.Error, filename, numberStart)
     ]
   })
   .finish()
-  .render([filename, Source.from(source)], 'ansi', { maxWidth: 100 })
+  .render({ id: filename, source: Source.from(source) }, 'ansi', {
+    maxWidth: 100,
+  })
 
 declare const console: { log(value: string): void }
 console.log(output)

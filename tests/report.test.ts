@@ -31,7 +31,7 @@ function render(
     .with_config(Config.default().with_color(color))
     .finish()
 
-  return report.render([filename, Source.from(source)], 'plain', {
+  return report.render({ id: filename, source: Source.from(source) }, 'plain', {
     maxWidth: 80,
   })
 }
@@ -40,9 +40,10 @@ describe('Report', () => {
   it('renders an inline label', () => {
     const output = render('const answer = false\n', (report) =>
       report.with_label(
-        Label.from(['example.ts', Range.new(15, 20)]).with_message(
-          'Expected a number',
-        ),
+        Label.from({
+          src: 'example.ts',
+          range: Range.new(15, 20),
+        }).with_message('Expected a number'),
       ),
     )
 
@@ -78,10 +79,10 @@ def six =
         ]),
       )
       .with_label(
-        Label.from([
-          filename,
-          Range.new(numberStart, numberStart + 1),
-        ]).with_message(
+        Label.from({
+          src: filename,
+          range: Range.new(numberStart, numberStart + 1),
+        }).with_message(
           RichText.from([
             'This is of type ',
             { text: 'Nat', semanticToken: 'type' },
@@ -89,10 +90,10 @@ def six =
         ),
       )
       .with_label(
-        Label.from([
-          filename,
-          Range.new(stringStart, stringStart + 3),
-        ]).with_message(
+        Label.from({
+          src: filename,
+          range: Range.new(stringStart, stringStart + 3),
+        }).with_message(
           RichText.from([
             'This is of type ',
             { text: 'Str', semanticToken: 'type' },
@@ -100,7 +101,10 @@ def six =
         ),
       )
       .with_label(
-        Label.from([filename, Range.new(matchStart, matchEnd)]).with_message(
+        Label.from({
+          src: filename,
+          range: Range.new(matchStart, matchEnd),
+        }).with_message(
           RichText.from([
             'The values are outputs of this match expression.\n',
             'Call stack:\n',
@@ -138,7 +142,10 @@ def six =
         ]
       })
       .finish()
-    const ir = report.toIR([filename, Source.from(source)], { maxWidth: 100 })
+    const ir = report.toIR(
+      { id: filename, source: Source.from(source) },
+      { maxWidth: 100 },
+    )
 
     expect(fullRequest).toBe(filename)
     expect({
@@ -177,9 +184,10 @@ def six =
     const report = Report.build(ReportKind.Error, filename, lineStart)
       .with_message('Invalid declaration')
       .with_label(
-        Label.from([filename, Range.new(lineStart, lineEnd)]).with_message(
-          'This declaration is invalid',
-        ),
+        Label.from({
+          src: filename,
+          range: Range.new(lineStart, lineEnd),
+        }).with_message('This declaration is invalid'),
       )
       .with_semantic_token_capability({
         tokenTypes: ['keyword', 'variable', 'number'],
@@ -196,12 +204,60 @@ def six =
       })
       .finish()
 
-    const ir = report.toIR([filename, Source.from(source)], { maxWidth: 80 })
+    const ir = report.toIR(
+      { id: filename, source: Source.from(source) },
+      {
+        maxWidth: 80,
+        contextLines: 1,
+      },
+    )
 
-    expect(requestedRange).toEqual([filename, 1, 2])
+    expect(requestedRange).toEqual([filename, 0, 3])
+    const plain = renderPlain(ir)
+    expect(plain).toContain('1 │ skip')
+    expect(plain).toContain('3 │ skip')
     expect(
       ir.spans.filter((span) => span.semanticToken !== undefined),
     ).toMatchSnapshot()
+  })
+
+  it('keeps context lines inside a multiline label', () => {
+    const filename = 'example.ts'
+    const source = `function main() {
+  // context
+  throw new Error("hey!")
+}`
+    const errorStart = source.indexOf('throw')
+    const report = Report.build(ReportKind.Error, filename, errorStart)
+      .with_message('hey!')
+      .with_label(
+        Label.from({
+          src: filename,
+          range: Range.new(0, source.length),
+        }),
+      )
+      .with_label(
+        Label.from({
+          src: filename,
+          range: Range.new(errorStart, errorStart + 'throw'.length),
+        }),
+      )
+      .finish()
+
+    const output = report.render(
+      { id: filename, source: Source.from(source) },
+      'plain',
+      {
+        maxWidth: 80,
+        contextLines: 1,
+      },
+    )
+
+    expect(output).toContain('2 │ │     // context')
+    expect(output).toContain('4 │ ╰─▶ }')
+    expect(output).not.toContain('⋮')
+    expect(output).not.toContain('╰───')
+    expect(output).toMatchSnapshot()
   })
 
   it('renders a multiline label and note', () => {
@@ -211,21 +267,24 @@ def six =
     const output = render(source, (report) =>
       report
         .with_label(
-          Label.from(['example.ts', Range.new(14, 43)]).with_message(
+          Label.from({
+            src: 'example.ts',
+            range: Range.new(14, 43),
+          }).with_message(
             'Fields use incompatible types\nCompare left and right values',
           ),
         )
         .with_label(
-          Label.from([
-            'example.ts',
-            Range.new(leftValue, leftValue + 1),
-          ]).with_message('This is a number'),
+          Label.from({
+            src: 'example.ts',
+            range: Range.new(leftValue, leftValue + 1),
+          }).with_message('This is a number'),
         )
         .with_label(
-          Label.from([
-            'example.ts',
-            Range.new(rightValue, rightValue + 3),
-          ]).with_message('This is a string'),
+          Label.from({
+            src: 'example.ts',
+            range: Range.new(rightValue, rightValue + 3),
+          }).with_message('This is a string'),
         )
         .with_note('Object fields must agree'),
     )

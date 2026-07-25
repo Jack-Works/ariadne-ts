@@ -2,7 +2,7 @@ import { isNumber, isString, range, saturatingSub } from '../utils/index.js'
 import { Range } from './Range.js'
 
 export type SpanInit =
-  [src: string, range: Range] | [start: number, end: number]
+  { src: string; range: Range } | { start: number; end: number }
 
 export class Span {
   constructor(
@@ -43,11 +43,16 @@ export class Span {
   static is = (o: unknown): o is Span => o instanceof Span
 
   static from(o: SpanInit) {
-    if (isNumber(o[0]) && isNumber(o[1])) return new Span(o[0], o[1])
+    if (typeof o !== 'object' || o === null) {
+      throw new Error(`Invalid SpanInit`)
+    }
+    if ('start' in o && isNumber(o.start) && isNumber(o.end)) {
+      return new Span(o.start, o.end)
+    }
 
-    if (isString(o[0]) && Range.is(o[1])) {
-      const s = new Span(o[1].start, o[1].end)
-      s.SourceId = o[0]
+    if ('src' in o && isString(o.src) && Range.is(o.range)) {
+      const s = new Span(o.range.start, o.range.end)
+      s.SourceId = o.src
       return s
     }
 

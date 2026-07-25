@@ -26,21 +26,21 @@ import { ColorValue } from './Color.js'
 import { Label } from './Label.js'
 import { LabelInfo, LabelKind } from './LabelInfo.js'
 import { ReportBuilder } from './ReportBuilder.js'
-import { ReportKind, ReportKindConstructor } from './ReportKind.js'
+import { ReportKind } from './ReportKind.js'
 import {
   decodeSemanticTokens,
   DecodedSemanticToken,
   SemanticTokenCapability,
   SemanticTokenProvider,
 } from '../semantic_tokens.js'
-import { Cache, CacheInit, Source } from './Source.js'
+import { Cache, Source, SourceInput } from './Source.js'
 import { SourceGroup } from './SourceGroup.js'
 import { LocationDisplay, RichText } from '../rich_text.js'
 
 /// A type representing a diagnostic that is ready to be rendered.
 export class Report<S extends Span> {
   constructor(
-    public kind: ReportKindConstructor,
+    public kind: ReportKind,
     public code: Option<string>,
     public msg: Option<RichText>,
     public note: Option<RichText>,
@@ -55,7 +55,7 @@ export class Report<S extends Span> {
 
   /// Begin building a new [`Report`].
   static build<S extends Span, Id extends string>(
-    kind: ReportKindConstructor,
+    kind: ReportKind,
     src_id: Id | null,
     offset: number,
   ): ReportBuilder<S> {
@@ -75,19 +75,23 @@ export class Report<S extends Span> {
   }
 
   /// Calculate layout and return a serializable intermediate representation.
-  toIR(init: CacheInit, options: LayoutOptions): DiagnosticIR {
+  toIR(init: SourceInput, options: LayoutOptions): DiagnosticIR {
     if (!Number.isInteger(options.maxWidth) || options.maxWidth <= 0) {
       throw new Error('maxWidth must be a positive integer')
     }
+    const contextLines = options.contextLines ?? 0
+    if (!Number.isInteger(contextLines) || contextLines < 0) {
+      throw new Error('contextLines must be a non-negative integer')
+    }
     const cache = Cache.from(init)
     const writer = createIRWriter()
-    this.write(cache, writer)
+    this.write(cache, writer, contextLines)
     return writer.finish(options.maxWidth)
   }
 
   /// Calculate layout and render it with the selected output backend.
   render(
-    init: CacheInit,
+    init: SourceInput,
     backend: OutputBackend,
     options: LayoutOptions,
   ): string {
@@ -190,6 +194,7 @@ export class Report<S extends Span> {
   private write<C extends Cache<string>, W extends Write>(
     cache: C,
     w: W,
+    contextLines: number,
   ): void {
     const draw: iCharacters =
       this.config.char_set === CharSet.Unicode
@@ -199,7 +204,7 @@ export class Report<S extends Span> {
     // --- Header ---
 
     const code = this.code.map_or('', (value) => format('[E{}] ', value))
-    let id = format('{}{}:', code, this.kind.name)
+    let id = format('{}{}:', code, this.kind)
     const kind_color =
       this.kind === ReportKind.Error
         ? this.config.error_color()
@@ -231,7 +236,7 @@ export class Report<S extends Span> {
         }
         let src = res.unwrap()
 
-        let line_range = src.get_line_range(span)
+        let line_range = this.lineRangeWithContext(src, span, contextLines)
 
         let iter = rangeIter(1, Infinity)
         iter = map(iter, (x) => Math.pow(10, x))
@@ -264,7 +269,8 @@ export class Report<S extends Span> {
 
       let src = res.unwrap()
 
-      let line_range = src.get_line_range(span)
+      const labelLineRange = src.get_line_range(span)
+      let line_range = this.lineRangeWithContext(src, span, contextLines)
       const semanticTokens = this.getSemanticTokens(
         src_id,
         src,
@@ -285,6 +291,7 @@ export class Report<S extends Span> {
           col + 1,
         ])
         .unwrap_or_else(() => [null, null])
+      const locationLine = line_no === null ? null : line_no - 1
 
       const displayedLocation = RichText.from(
         this.locationDisplay?.(src_name, line_no, col_no) ??
@@ -517,6 +524,9 @@ export class Report<S extends Span> {
                   (ml) => ml === margin.label,
                 )
                 let is_limit = col === multi_labels.length
+                const continuesBelow = line_labels.some(
+                  (lineLabel) => lineLabel.label === margin.label,
+                )
                 return [
                   new Display(
                     is_limit
@@ -524,7 +534,9 @@ export class Report<S extends Span> {
                       : is_col
                         ? is_start
                           ? draw.ltop
-                          : draw.lcross
+                          : continuesBelow
+                            ? draw.lcross
+                            : draw.lbot
                         : draw.hbar,
                   ).fg(margin.label.color),
 
@@ -596,7 +608,11 @@ export class Report<S extends Span> {
               true,
               false, // Multi-line spans don;t have their messages drawn at the start
             )
-          } else if (is_end) {
+          } else if (
+            is_end &&
+            (label.msg.is_some() ||
+              margin_label.map_or(true, (margin) => label !== margin.label))
+          ) {
             return new LineLabel(
               label.last_offset() - line.offset(),
               label,
@@ -635,27 +651,37 @@ export class Report<S extends Span> {
 
         // Skip this line if we don't have labels for it
         if (line_labels.length === 0 && margin_label.is_none()) {
-          let within_label = multi_labels.some((label) =>
-            label.span.contains(line.span().start),
-          )
-          if (!is_ellipsis && within_label) {
-            is_ellipsis = true
+          const isContextLine =
+            idx < labelLineRange.start ||
+            idx >= labelLineRange.end ||
+            (locationLine !== null &&
+              idx >= locationLine - contextLines &&
+              idx <= locationLine + contextLines)
+          if (isContextLine) {
+            is_ellipsis = false
           } else {
-            if (!this.config.compact && !is_ellipsis) {
-              write_margin(
-                w,
-                idx,
-                false,
-                is_ellipsis,
-                false,
-                none(),
-                [],
-                none(),
-              )
-              write(w, '\n')
+            let within_label = multi_labels.some((label) =>
+              label.span.contains(line.span().start),
+            )
+            if (!is_ellipsis && within_label) {
+              is_ellipsis = true
+            } else {
+              if (!this.config.compact && !is_ellipsis) {
+                write_margin(
+                  w,
+                  idx,
+                  false,
+                  is_ellipsis,
+                  false,
+                  none(),
+                  [],
+                  none(),
+                )
+                write(w, '\n')
+              }
+              is_ellipsis = true
+              continue
             }
-            is_ellipsis = true
-            continue
           }
         } else {
           is_ellipsis = false
@@ -1074,6 +1100,18 @@ export class Report<S extends Span> {
         )
       }
     }
+  }
+
+  private lineRangeWithContext(
+    source: Source,
+    span: Span,
+    contextLines: number,
+  ): Range {
+    const range = source.get_line_range(span)
+    return new Range(
+      Math.max(0, range.start - contextLines),
+      Math.min(source.lines().length, range.end + contextLines),
+    )
   }
 }
 

@@ -1,0 +1,215 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`semantic token AST helpers > creates ranged tokens from a TypeScript AST > ranged delta tuples 1`] = `
+[
+  1,
+  2,
+  20,
+  17,
+  256,
+  1,
+  2,
+  5,
+  15,
+  0,
+  0,
+  6,
+  3,
+  15,
+  0,
+  0,
+  4,
+  5,
+  8,
+  0,
+  0,
+  6,
+  6,
+  18,
+  0,
+  0,
+  7,
+  1,
+  21,
+  0,
+  0,
+  2,
+  7,
+  8,
+  0,
+]
+`;
+
+exports[`semantic token AST helpers > creates ranged tokens from a TypeScript AST 1`] = `
+[
+  {
+    "length": 6,
+    "line": 0,
+    "start": 0,
+    "tokenModifiers": [],
+    "tokenType": "keyword",
+  },
+  {
+    "length": 8,
+    "line": 0,
+    "start": 7,
+    "tokenModifiers": [],
+    "tokenType": "keyword",
+  },
+  {
+    "length": 4,
+    "line": 0,
+    "start": 16,
+    "tokenModifiers": [
+      "declaration",
+    ],
+    "tokenType": "function",
+  },
+  {
+    "length": 20,
+    "line": 1,
+    "start": 2,
+    "tokenModifiers": [
+      "documentation",
+    ],
+    "tokenType": "comment",
+  },
+  {
+    "length": 5,
+    "line": 2,
+    "start": 2,
+    "tokenModifiers": [],
+    "tokenType": "keyword",
+  },
+  {
+    "length": 3,
+    "line": 2,
+    "start": 8,
+    "tokenModifiers": [],
+    "tokenType": "keyword",
+  },
+  {
+    "length": 5,
+    "line": 2,
+    "start": 12,
+    "tokenModifiers": [],
+    "tokenType": "variable",
+  },
+  {
+    "length": 6,
+    "line": 2,
+    "start": 18,
+    "tokenModifiers": [],
+    "tokenType": "string",
+  },
+  {
+    "length": 1,
+    "line": 2,
+    "start": 25,
+    "tokenModifiers": [],
+    "tokenType": "operator",
+  },
+  {
+    "length": 7,
+    "line": 2,
+    "start": 27,
+    "tokenModifiers": [],
+    "tokenType": "variable",
+  },
+]
+`;
+
+exports[`semantic token AST helpers > creates the same tokens from ESTree and Babel ASTs 1`] = `
+[
+  {
+    "length": 5,
+    "line": 0,
+    "start": 0,
+    "tokenModifiers": [],
+    "tokenType": "keyword",
+  },
+  {
+    "length": 6,
+    "line": 0,
+    "start": 6,
+    "tokenModifiers": [
+      "declaration",
+    ],
+    "tokenType": "variable",
+  },
+  {
+    "length": 1,
+    "line": 0,
+    "start": 13,
+    "tokenModifiers": [],
+    "tokenType": "operator",
+  },
+  {
+    "length": 2,
+    "line": 0,
+    "start": 15,
+    "tokenModifiers": [],
+    "tokenType": "number",
+  },
+  {
+    "length": 11,
+    "line": 1,
+    "start": 0,
+    "tokenModifiers": [],
+    "tokenType": "comment",
+  },
+  {
+    "length": 8,
+    "line": 2,
+    "start": 0,
+    "tokenModifiers": [],
+    "tokenType": "keyword",
+  },
+  {
+    "length": 5,
+    "line": 2,
+    "start": 9,
+    "tokenModifiers": [
+      "declaration",
+    ],
+    "tokenType": "function",
+  },
+  {
+    "length": 4,
+    "line": 2,
+    "start": 15,
+    "tokenModifiers": [
+      "declaration",
+    ],
+    "tokenType": "parameter",
+  },
+  {
+    "length": 6,
+    "line": 2,
+    "start": 23,
+    "tokenModifiers": [],
+    "tokenType": "keyword",
+  },
+  {
+    "length": 4,
+    "line": 2,
+    "start": 30,
+    "tokenModifiers": [],
+    "tokenType": "string",
+  },
+  {
+    "length": 1,
+    "line": 2,
+    "start": 35,
+    "tokenModifiers": [],
+    "tokenType": "operator",
+  },
+  {
+    "length": 4,
+    "line": 2,
+    "start": 37,
+    "tokenModifiers": [],
+    "tokenType": "variable",
+  },
+]
+`;

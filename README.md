@@ -38,6 +38,27 @@ pnpm add @magic-works/ariadne
 
 TypeScript examples are available in the [`examples`](./examples) directory.
 
+## Core API
+
+The standard report builder workflow uses these exports:
+
+| Export          | Purpose                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `Report`        | Starts a diagnostic with `Report.build(...)`, calculates its layout, and produces plain-text, ANSI, or HTML output. |
+| `ReportKind`    | Selects the diagnostic severity, such as `Error`, `Warning`, or `Advice`.                                           |
+| `Label`         | Associates a source range with an optional annotation message and color.                                            |
+| `Range`         | Defines the zero-based, end-exclusive character offsets covered by a label.                                         |
+| `Source`        | Wraps the source string consumed when the report is laid out and rendered.                                          |
+| `SpanInit`      | Names a sourced span as `{ src, range }`, or an offset-only span as `{ start, end }`.                               |
+| `SourceInput`   | Supplies layout and rendering with a named source as `{ id, source }`, a `Source`, or a custom source provider.     |
+| `LayoutOptions` | Configures the required maximum output width and optional surrounding context lines.                                |
+| `OutputBackend` | Identifies the `plain`, `ansi`, or `html` output selected by `Report.render`.                                       |
+
+`LayoutOptions` and `OutputBackend` are usually inferred from the arguments passed
+to `Report.render`; import them explicitly when exposing those values through your
+own API. Rich text, semantic tokens, custom renderers, color schemes, and AST
+helpers are optional extensions.
+
 ## Contributing
 
 Contributions are welcome\! Please feel free to open an issue or submit a pull request.

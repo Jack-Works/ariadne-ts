@@ -35,9 +35,14 @@
         "ci:release": "changeset publish"
     },
     "devDependencies": {
+        "@babel/parser": "^8.0.4",
+        "@babel/types": "^8.0.4",
         "@changesets/cli": "^2.31.1",
+        "@types/estree": "^1.0.9",
+        "eslint-visitor-keys": "^5.0.1",
+        "espree": "^11.2.0",
         "prettier": "^3.9.6",
-        "typescript": "^7.0.2",
+        "typescript": "^6.0.3",
         "vitest": "^4.1.10"
     }
 }

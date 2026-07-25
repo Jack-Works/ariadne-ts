@@ -1,5 +1,19 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Report > keeps context lines inside a multiline label 1`] = `
+"Error: hey!
+   ╭─[example.ts:3:3]
+   │
+ 1 │ ╭─▶ function main() {
+ 2 │ │     // context
+ 3 │ │     throw new Error("hey!")
+   · │     ─────  
+   · │            
+ 4 │ ╰─▶ }
+───╯
+"
+`;
+
 exports[`Report > renders a multiline label and note 1`] = `
 "[E01] Error: Invalid expression
    ╭─[example.ts:1:1]
