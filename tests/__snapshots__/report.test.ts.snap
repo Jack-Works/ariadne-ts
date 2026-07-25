@@ -716,6 +716,144 @@ exports[`Report > serializes layout IR and renders every backend > plain 1`] = `
 "
 `;
 
+exports[`Report > uses deeper backgrounds for indented multiline inserted and deleted diff text > text 1`] = `
+"- start
+-   removed line
+-   shared
+- end
++ start
++   shared
++   inserted line
++ end"
+`;
+
+exports[`Report > uses deeper backgrounds for indented multiline inserted and deleted diff text 1`] = `
+[
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "- ",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "start
+",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "- ",
+  },
+  {
+    "background": {
+      "index": 217,
+      "kind": "ansi256",
+    },
+    "text": "  removed line
+",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "- ",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "  shared
+",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "- ",
+  },
+  {
+    "background": {
+      "index": 224,
+      "kind": "ansi256",
+    },
+    "text": "end",
+  },
+  {
+    "text": "
+",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "+ ",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "start
+",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "+ ",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "  shared
+",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "+ ",
+  },
+  {
+    "background": {
+      "index": 157,
+      "kind": "ansi256",
+    },
+    "text": "  inserted line
+",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "+ ",
+  },
+  {
+    "background": {
+      "index": 194,
+      "kind": "ansi256",
+    },
+    "text": "end",
+  },
+]
+`;
+
 exports[`Report > uses deeper backgrounds for substituted diff text 1`] = `
 [
   {

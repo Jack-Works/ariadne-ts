@@ -186,10 +186,10 @@ describe('Report', () => {
     expect(resolved.spans).toMatchSnapshot()
   })
 
-  it('uses deeper backgrounds for multiline inserted and deleted diff text', () => {
+  it('uses deeper backgrounds for indented multiline inserted and deleted diff text', () => {
     const resolved = RichText.from([
-      { diff: 'before', text: 'start\nremoved line\nshared\nend' },
-      { diff: 'after', text: 'start\nshared\ninserted line\nend' },
+      { diff: 'before', text: 'start\n  removed line\n  shared\nend' },
+      { diff: 'after', text: 'start\n  shared\n  inserted line\nend' },
     ]).resolveDiff(() => [])
 
     const changedText = (background: number) =>
@@ -202,10 +202,12 @@ describe('Report', () => {
         .map((span) => span.text)
         .join('')
 
-    expect(changedText(217)).toContain('removed line')
-    expect(changedText(157)).toContain('inserted line')
+    expect(changedText(217)).toContain('  removed line')
+    expect(changedText(157)).toContain('  inserted line')
     expect(changedText(217)).not.toContain('shared')
     expect(changedText(157)).not.toContain('shared')
+    expect(resolved.spans).toMatchSnapshot()
+    expect(resolved.toString()).toMatchSnapshot('text')
   })
 
   it('wraps annotation text within maxWidth', () => {

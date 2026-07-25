@@ -89,16 +89,19 @@ export class RichText {
       }
       const background = span.diff === 'before' ? Fixed(224) : Fixed(194)
       const changedBackground = span.diff === 'before' ? Fixed(217) : Fixed(157)
-      spans.push({ text: span.diff === 'before' ? '- ' : '+ ', background })
       spans.push(
-        ...applyChangedBackground(
-          semanticText(
-            span.text,
-            provideSemanticTokens(span.text, span.language ?? ''),
-            background,
+        ...prefixDiffLines(
+          applyChangedBackground(
+            semanticText(
+              span.text,
+              provideSemanticTokens(span.text, span.language ?? ''),
+              background,
+            ),
+            edits.get(index) ?? [{ start: 0, end: span.text.length }],
+            changedBackground,
           ),
-          edits.get(index) ?? [{ start: 0, end: span.text.length }],
-          changedBackground,
+          span.diff === 'before' ? '- ' : '+ ',
+          background,
         ),
       )
       if (
@@ -156,6 +159,28 @@ export class RichText {
     if (input instanceof RichText) return input
     return new RichText(typeof input === 'string' ? [input] : input)
   }
+}
+
+function prefixDiffLines(
+  spans: readonly RichTextSpan[],
+  prefix: string,
+  background: ColorValue,
+): RichTextSpan[] {
+  const result: RichTextSpan[] = []
+  let atLineStart = true
+  for (const span of spans) {
+    let start = 0
+    while (start < span.text.length) {
+      if (atLineStart) result.push({ text: prefix, background })
+      const newline = span.text.indexOf('\n', start)
+      const end = newline === -1 ? span.text.length : newline + 1
+      result.push({ ...span, text: span.text.slice(start, end) })
+      atLineStart = newline !== -1
+      start = end
+    }
+  }
+  if (result.length === 0) result.push({ text: prefix, background })
+  return result
 }
 
 function diffEdits(spans: readonly RichTextSpan[]): Map<number, EditRange[]> {
